@@ -3,6 +3,7 @@ logs/
 google_client_config.json
 test.py
 assets/
+start.ps1.txt
 
 # UV Dependencies
 uv.lock
