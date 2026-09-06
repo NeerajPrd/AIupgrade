@@ -266,6 +266,19 @@ async def chat_via_agent_api(
     if key_hash != api_record.api_key_hash:
         raise HTTPException(status_code=401, detail="Invalid API key")
 
+    # 2b. Enforce this endpoint's own per-minute rate limit
+    allowed = await request.app.state.limiter.allow(
+        key=f"agent_api:{api_record.id}",
+        limit=api_record.rate_limit_per_minute,
+        window_s=60,
+    )
+    if not allowed:
+        raise HTTPException(
+            status_code=429,
+            detail="Rate limit exceeded. Try again in a moment.",
+            headers={"Retry-After": "60"},
+        )
+
     # 3. Load agent
     agent = await db.get(Agent, api_record.agent_id)
     if not agent:
