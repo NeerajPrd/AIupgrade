@@ -58,5 +58,5 @@ class PageData(BaseModel):
 class ProcessedDocument(BaseModel):
     status: str
     filename: str
-    data: Optional[List[PageData]]
+    data: Optional[List[PageData]] = None
     error: Optional[Any] = None

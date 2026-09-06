@@ -4,11 +4,15 @@ import os
 from typing import Dict, List, Type
 
 from src.core.file_handler.pdf import PDFDocumentExtractor
+from src.core.file_handler.txt import TXTDocumentExtractor
+from src.core.file_handler.docx import DOCXDocumentExtractor
 from src.schemas.document import PageData, ProcessedDocument
 
 
 class SupportedFileExtension(str, Enum):
     PDF = ".pdf"
+    TXT = ".txt"
+    DOCX = ".docx"
 
     @classmethod
     def from_filename(cls, filename: str) -> "SupportedFileExtension":
@@ -26,6 +30,8 @@ class DocumentProcessor:
     def __init__(self) -> None:
         self._handler_registry: Dict[SupportedFileExtension, Type] = {
             SupportedFileExtension.PDF: PDFDocumentExtractor,
+            SupportedFileExtension.TXT: TXTDocumentExtractor,
+            SupportedFileExtension.DOCX: DOCXDocumentExtractor,
         }
 
     async def process_single_file(self, filename: str, file_bytes: bytes) -> "ProcessedDocument":
