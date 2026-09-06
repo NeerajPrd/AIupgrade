@@ -169,7 +169,7 @@ class Settings(BaseSettings):
     FAST_MODEL_ID: str = "gemini-2.5-flash"
 
     SMART_MODEL_PROVIDER: str = "gemini"
-    SMART_MODEL_ID: str = "gemini-2.5-pro"
+    SMART_MODEL_ID: str = "gemini-flash-latest"
 
     FALLBACK_MODEL_NAME: str = "llama3.2:latest"
     FALLBACK_MODEL_PROVIDER: str = "ollama"
