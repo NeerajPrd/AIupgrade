@@ -205,7 +205,7 @@ class ChatOrchestrator:
         db_history = await self.chat_service.get_history(history_id)
         temp_history = list(db_history) + [{"role": "user", "content": processed_message}]
 
-        agent_tools = agent.get("tools", []) if isinstance(agent, dict) else getattr(agent, "tools", [])
+        agent_tools = (agent.get("tools") if isinstance(agent, dict) else getattr(agent, "tools", None)) or []
         web_search_enabled = "web_search" in agent_tools or "webSearch" in agent_tools or "websearch" in agent_tools
 
         selected_tools = await analyze_and_select_tools(temp_history, web_search_enabled=web_search_enabled, user_id=user_id)
