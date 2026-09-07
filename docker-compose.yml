@@ -28,6 +28,7 @@ services:
         # host-published backend port, not the internal container port.
         NEXT_PUBLIC_API_URL: http://localhost:8004
         NEXT_PUBLIC_BASE_URL: http://localhost:8004
+        NEXT_PUBLIC_WEBSOCKET_URL: ws://localhost:8004/ws-api
     image: upgrade-fagoon-frontend:dev
     container_name: upgrade-fagoon_frontend_container
     ports:
