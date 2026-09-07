@@ -15,7 +15,24 @@ services:
       - ENV=development
     restart: unless-stopped
     depends_on:
+      - fagoon-db
       - evolution-api
+
+  # ----------------------------------------
+  # 0. THE APP'S OWN POSTGRES (fka manually-run "fagoon-test-db")
+  # ----------------------------------------
+  fagoon-db:
+    image: pgvector/pgvector:pg16
+    container_name: fagoon_db_container
+    environment:
+      - POSTGRES_USER=fagoon
+      - POSTGRES_PASSWORD=fagoon
+      - POSTGRES_DB=fagoon
+    ports:
+      - "5432:5432"
+    volumes:
+      - fagoon_db_data:/var/lib/postgresql/data
+    restart: unless-stopped
 
   # ----------------------------------------
   # 1b. THE NEXT.JS FRONTEND
@@ -91,3 +108,6 @@ volumes:
   evolution_instances:
   evolution_db_data:
   evolution_redis_data:
+  fagoon_db_data:
+    external: true
+    name: 74f050413224ed723e16a8dbc8f9693b6575b9c72af70d7a0044341bac951ad2
