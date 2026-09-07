@@ -37,7 +37,7 @@ const PaymentSuccess: React.FC = () => {
         };
         const token = getCookie("jwt") || (typeof window !== 'undefined' ? localStorage.getItem('upgrade-token') : null) || "";
 
-        const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:2321";
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8004";
         const response = await fetch(`${API_BASE_URL}/api/v1/payment/complete-checkout-session/${CHECKOUT_SESSION_ID}`, {
           method: 'GET',
           headers: {

@@ -18,7 +18,7 @@ const VerifyEmail = () => {
   useEffect(() => {
     const verifyEmail = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8004';
         const response = await axios.get(
           `${apiUrl}/api/v1/auth/verify?token=${verifyEmailId}`
         );

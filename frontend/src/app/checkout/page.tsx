@@ -93,7 +93,7 @@ const CheckoutContent: React.FC = () => {
     e.preventDefault();
 
     try {
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:2321";
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8004";
       const response = await fetch(`${API_BASE_URL}/api/v1/payment/create-checkout-session`, {
         method: 'POST',
         headers: {

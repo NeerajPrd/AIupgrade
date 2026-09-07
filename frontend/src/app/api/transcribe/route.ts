@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     const apiFormData = new FormData();
     apiFormData.append("file", audioFile, "audio.mp3");
 
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:2321";
+    const backendUrl = process.env.BACKEND_URL || "http://localhost:8004";
     const response = await fetch(
       `${backendUrl}/api/v1/transcribe`,
       {

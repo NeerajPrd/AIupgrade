@@ -4,7 +4,8 @@ export async function POST(req: Request) {
   const body = await req.json()
   const cookie = req.headers.get('cookie') || ''
   // Call Python API
-  const pythonRes = await fetch('http://localhost:2321/api/v1/users/login', {
+  const backendUrl = process.env.BACKEND_URL || "http://localhost:8004";
+  const pythonRes = await fetch(`${backendUrl}/api/v1/users/login`, {
     method: 'POST',
     headers: {
       Cookie: cookie,
