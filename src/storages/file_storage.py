@@ -49,7 +49,8 @@ class LocalFileStorageManager:
     def generate_signed_url(self, blob_name: str, expiration_in_hours: int = 24) -> Optional[str]:
         from src.core.settings import system_setting
         base_url = system_setting.get_value("DEFAULT_URL") or "http://localhost:8000"
-        return f"{base_url.rstrip('/')}/outputs/{blob_name.replace('\\', '/')}"
+        normalized_blob_name = blob_name.replace("\\", "/")
+        return f"{base_url.rstrip('/')}/outputs/{normalized_blob_name}"
 
     def upload_json_data(
         self,
