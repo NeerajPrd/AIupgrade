@@ -1,5 +1,5 @@
-# Use Node.js as base image
-FROM node:18-alpine
+# Use Node.js as base image (Next.js 16 requires Node >=20.9)
+FROM node:20-alpine
 
 # Set the working directory
 WORKDIR /app
@@ -7,11 +7,20 @@ WORKDIR /app
 # Copy package.json and package-lock.json
 COPY package.json package-lock.json ./
 
-# Install dependencies
-RUN npm install
+# Install dependencies from the exact versions already resolved in package-lock.json.
+# --legacy-peer-deps: ollama-ai-provider@1.2.0 peers on zod@^3, but the lockfile
+# already dedupes the whole tree onto zod@4.4.3 (pulled in by @ai-sdk/*); this just
+# accepts that already-locked resolution instead of npm re-validating peer ranges.
+RUN npm ci --legacy-peer-deps
 
 # Copy the entire project
 COPY . .
+
+# Browser-facing API URL, baked into the client bundle at build time.
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_BASE_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_BASE_URL=$NEXT_PUBLIC_BASE_URL
 
 # Build the Next.js app
 RUN npm run build

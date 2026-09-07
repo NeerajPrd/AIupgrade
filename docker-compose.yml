@@ -18,6 +18,29 @@ services:
       - evolution-api
 
   # ----------------------------------------
+  # 1b. THE NEXT.JS FRONTEND
+  # ----------------------------------------
+  upgrade-fagoon-frontend:
+    build:
+      context: ./frontend
+      args:
+        # Browser-facing: the browser runs on the host, so it must use the
+        # host-published backend port, not the internal container port.
+        NEXT_PUBLIC_API_URL: http://localhost:8004
+        NEXT_PUBLIC_BASE_URL: http://localhost:8004
+    image: upgrade-fagoon-frontend:dev
+    container_name: upgrade-fagoon_frontend_container
+    ports:
+      - "3000:8080"
+    environment:
+      # Server-only: the Next.js server itself runs inside this container, so it
+      # reaches the backend via the Compose network, not the host-published port.
+      - BACKEND_URL=http://upgrade-fagoon-dev:2321
+    restart: unless-stopped
+    depends_on:
+      - upgrade-fagoon-dev
+
+  # ----------------------------------------
   # 2. THE WHATSAPP GATEWAY (EVOLUTION API)
   # ----------------------------------------
   evolution-api:
