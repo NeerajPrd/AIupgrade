@@ -1,0 +1,4 @@
+# Shell scripts must always be checked out with LF line endings, even on
+# Windows, otherwise their shebang line breaks ("no such file or directory"
+# when a container tries to exec them).
+*.sh text eol=lf
