@@ -109,5 +109,4 @@ volumes:
   evolution_db_data:
   evolution_redis_data:
   fagoon_db_data:
-    external: true
-    name: 74f050413224ed723e16a8dbc8f9693b6575b9c72af70d7a0044341bac951ad2
+    name: fagoon_db_data
