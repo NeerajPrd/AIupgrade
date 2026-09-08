@@ -39,7 +39,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 from typing import Optional
-from src.api.custom_middleware import LoggingMiddleware, AuthMiddleware
+from src.api.custom_middleware import LoggingMiddleware, AuthMiddleware, PublicAgentApiCORSMiddleware
 from src.api.logging_config import setup_logging
 from src.api.setup_api import setup_and_combine_all_routers
 from src.core.settings import get_settings, system_setting
@@ -253,6 +253,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+# Registered after CORSMiddleware so it wraps outside it (last-added runs
+# first) and can open up CORS just for the public agent-api chat endpoint,
+# used by the embeddable widget from arbitrary third-party origins.
+app.add_middleware(PublicAgentApiCORSMiddleware)
 
 try:
     from fastapi import APIRouter

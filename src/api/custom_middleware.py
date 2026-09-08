@@ -318,3 +318,51 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         logger.info(f"Response: {response.status_code}")
         return response
+
+
+class PublicAgentApiCORSMiddleware(BaseHTTPMiddleware):
+    """
+    The /agent-api/* chat endpoint is called directly from arbitrary
+    third-party websites embedding the chat widget, authenticated by an
+    X-API-Key header rather than cookies. The app-wide CORSMiddleware
+    keeps a strict origin allowlist for the cookie-authenticated app and
+    must stay that way, so this middleware carves out an open,
+    credential-less CORS policy for just this path prefix.
+
+    Must be registered with app.add_middleware() AFTER CORSMiddleware so
+    it wraps outside it (Starlette's add_middleware prepends, so the
+    last-added middleware runs first) and can answer preflight requests
+    before the strict allowlist ever sees them.
+    """
+
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+        if "/agent-api/" not in request.url.path:
+            return await call_next(request)
+
+        origin = request.headers.get("origin")
+
+        if request.method == "OPTIONS":
+            headers = {
+                "Access-Control-Allow-Methods": "POST, OPTIONS",
+                "Access-Control-Allow-Headers": request.headers.get(
+                    "access-control-request-headers", "Content-Type, X-API-Key"
+                ),
+                "Access-Control-Max-Age": "600",
+            }
+            if origin:
+                headers["Access-Control-Allow-Origin"] = origin
+                headers["Vary"] = "Origin"
+            return Response(status_code=204, headers=headers)
+
+        response = await call_next(request)
+        # The response has already passed through the app-wide CORSMiddleware,
+        # which unconditionally stamps Access-Control-Allow-Credentials: true.
+        # This endpoint is key-authenticated, not cookie-authenticated, and
+        # must never pair a reflected/wildcard origin with allow-credentials
+        # (that combination is a browser-exploitable CORS misconfiguration).
+        if "access-control-allow-credentials" in response.headers:
+            del response.headers["access-control-allow-credentials"]
+        if origin:
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Vary"] = "Origin"
+        return response
