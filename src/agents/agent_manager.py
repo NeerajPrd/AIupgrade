@@ -9,6 +9,19 @@ from src.core.database.postgres import PostgresManager
 from src.services.nosql.postgres_services import PostgresServices
 from sqlalchemy import select, update, delete
 
+def _deep_merge(base: Dict[str, Any], updates: Dict[str, Any]) -> Dict[str, Any]:
+    """Recursively merge `updates` into `base`, preserving keys within nested
+    dicts that `updates` doesn't mention instead of replacing them wholesale."""
+    merged = dict(base)
+    for key, value in updates.items():
+        existing = merged.get(key)
+        if isinstance(existing, dict) and isinstance(value, dict):
+            merged[key] = _deep_merge(existing, value)
+        else:
+            merged[key] = value
+    return merged
+
+
 class AgentManager:
     def __init__(self, postgres_manager: PostgresManager, file_storage: FileStorageService):
         self.postgres_manager = postgres_manager
@@ -174,7 +187,7 @@ class AgentManager:
             if config_updates:
                 sql_agent = await pg_services.get_agent_by_id(agent_uuid)
                 if sql_agent:
-                    new_config = {**sql_agent.config, **config_updates}
+                    new_config = _deep_merge(sql_agent.config, config_updates)
                     update_dict["config"] = new_config
 
             update_dict["updated_at"] = datetime.now(timezone.utc)
