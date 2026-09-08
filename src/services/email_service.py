@@ -21,6 +21,14 @@ class EmailService:
         """
         Private method to construct and send an email.
         """
+        if not system_setting.smtp_configured:
+            logger.info(
+                "SMTP not configured (EMAIL_* still at their placeholder defaults) — "
+                "skipping email send to {} instead of failing.",
+                to_email,
+            )
+            return False
+
         msg = MIMEText(html_content, "html", "utf-8")
         msg["From"] = Header(system_setting.EMAIL_FROM, "utf-8")
         msg["To"] = Header(to_email, "utf-8")

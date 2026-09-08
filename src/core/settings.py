@@ -301,6 +301,15 @@ class Settings(BaseSettings):
     def feature_enabled(self, name: str) -> bool:
         return name in self.enabled_features
 
+    @property
+    def smtp_configured(self) -> bool:
+        """True when EMAIL_* holds real credentials rather than the placeholder defaults."""
+        return (
+            self.EMAIL_HOST not in ("", "localhost")
+            and self.EMAIL_USERNAME not in ("", "mock_username")
+            and self.EMAIL_PASSWORD not in ("", "mock_password")
+        )
+
     @model_validator(mode="after")
     def _resolve(self):
         # DB url falls back to the bundled DSN (lite mode) when nothing explicit.

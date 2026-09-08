@@ -119,8 +119,9 @@ class AuthService:
     async def _send_verification_email(self, email: str, token: str):
         verification_url = f"{system_setting.FAGOON_URL}/verify-email/{token}"
         try:
-            await self.email_service.send_signup_email(email, verification_url)
-            logger.info("Verification email sent to {}", email)
+            sent = await self.email_service.send_signup_email(email, verification_url)
+            if sent:
+                logger.info("Verification email sent to {}", email)
         except Exception as e:
             logger.error("Failed to send signup email for {}: {}", email, e)
             # We don't raise an error here to avoid failing the whole registration
