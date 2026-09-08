@@ -16,6 +16,7 @@ services:
     restart: unless-stopped
     depends_on:
       - fagoon-db
+      - fagoon-redis
       - evolution-api
 
   # ----------------------------------------
@@ -32,6 +33,16 @@ services:
       - "5432:5432"
     volumes:
       - fagoon_db_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # ----------------------------------------
+  # 0b. THE APP'S OWN REDIS (rate limiting, Celery broker/result backend)
+  # ----------------------------------------
+  fagoon-redis:
+    image: redis:alpine
+    container_name: fagoon_redis_container
+    volumes:
+      - fagoon_redis_data:/data
     restart: unless-stopped
 
   # ----------------------------------------
@@ -110,3 +121,5 @@ volumes:
   evolution_redis_data:
   fagoon_db_data:
     name: fagoon_db_data
+  fagoon_redis_data:
+    name: fagoon_redis_data
