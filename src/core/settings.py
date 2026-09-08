@@ -173,6 +173,7 @@ class Settings(BaseSettings):
 
     FALLBACK_MODEL_NAME: str = "llama3.2:latest"
     FALLBACK_MODEL_PROVIDER: str = "ollama"
+    OLLAMA_BASE_URL: Optional[str] = None
 
     # Channel webhook / integration configuration
     REDIS_URL: str = ""
