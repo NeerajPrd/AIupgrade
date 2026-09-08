@@ -1,14 +1,16 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Copy, CheckCircle2, Save, Loader2, MessageSquare, Key, Eye, EyeOff, Trash2 } from "lucide-react"
+import { Copy, CheckCircle2, Save, Loader2, MessageSquare, Key, Eye, EyeOff, Trash2, Globe } from "lucide-react"
 import { FaTelegramPlane, FaWhatsapp, FaFacebookMessenger } from "react-icons/fa"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
     getAgentWebhookConfig,
     setAgentChannelConfig,
@@ -163,6 +165,24 @@ export function DeployAgentModal({ isOpen, onClose, agentId, agentName }: Deploy
         return `${prefix}••••••••••••••••••••••••`
     }
 
+    const escapeHtmlAttr = (value: string) => value.replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+
+    const getWidgetEmbedSnippet = () => {
+        if (!apiInfo?.slug) return ''
+        const scriptOrigin = typeof window !== 'undefined' ? window.location.origin : ''
+        const apiKey = oneTimeApiKey || 'YOUR_API_KEY'
+        return [
+            '<script',
+            `  src="${scriptOrigin}/widget.js"`,
+            `  data-api-base="${API_BASE_URL}"`,
+            `  data-agent-slug="${apiInfo.slug}"`,
+            `  data-api-key="${apiKey}"`,
+            `  data-agent-name="${escapeHtmlAttr(agentName)}"`,
+            '  async',
+            '></script>',
+        ].join('\n')
+    }
+
     const handleRevokeApi = () => {
         if (!confirm("Are you sure you want to revoke this API Key? Any external integrations using this key will immediately stop working.")) {
             return
@@ -227,7 +247,7 @@ export function DeployAgentModal({ isOpen, onClose, agentId, agentName }: Deploy
                 </DialogHeader>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-4">
-                    <TabsList className="grid w-full grid-cols-4">
+                    <TabsList className="grid w-full grid-cols-5">
                         <TabsTrigger value="whatsapp" className="flex items-center gap-2">
                             <FaWhatsapp className="text-[#25D366]" /> WhatsApp
                         </TabsTrigger>
@@ -236,6 +256,9 @@ export function DeployAgentModal({ isOpen, onClose, agentId, agentName }: Deploy
                         </TabsTrigger>
                         <TabsTrigger value="telegram" className="flex items-center gap-2">
                             <FaTelegramPlane className="text-[#0088cc]" /> Telegram
+                        </TabsTrigger>
+                        <TabsTrigger value="website" className="flex items-center gap-2">
+                            <Globe className="h-4 w-4" /> Website
                         </TabsTrigger>
                         <TabsTrigger value="api" className="flex items-center gap-2">
                             <Key className="h-4 w-4" /> API
@@ -402,6 +425,78 @@ export function DeployAgentModal({ isOpen, onClose, agentId, agentName }: Deploy
                                     {mutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
                                     Save Telegram Config
                                 </Button>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    {/* WEBSITE TAB */}
+                    <TabsContent value="website" className="mt-4 space-y-4">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-lg flex items-center gap-2">
+                                    <Globe className="h-4.5 w-4.5" /> Website Widget
+                                </CardTitle>
+                                <CardDescription>
+                                    Embed a floating chat bubble powered by <strong>{agentName}</strong> on any website with a single script tag.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                {isLoadingApiInfo ? (
+                                    <div className="flex items-center justify-center py-8">
+                                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                                    </div>
+                                ) : apiInfo ? (
+                                    <div className="space-y-4">
+                                        {!oneTimeApiKey && (
+                                            <Alert>
+                                                <AlertDescription className="text-xs">
+                                                    The snippet below uses a placeholder for the API key because the full key is only shown once, right after it's generated.
+                                                    Copy it from the <strong>API</strong> tab if you still have it, or revoke and regenerate there to get a fresh one.
+                                                </AlertDescription>
+                                            </Alert>
+                                        )}
+
+                                        <div className="space-y-1">
+                                            <Label className="text-xs text-muted-foreground">Embed Snippet</Label>
+                                            <div className="flex gap-2">
+                                                <Textarea
+                                                    readOnly
+                                                    value={getWidgetEmbedSnippet()}
+                                                    rows={8}
+                                                    className="font-mono text-xs bg-background resize-none"
+                                                />
+                                                <Button
+                                                    variant="secondary"
+                                                    size="icon"
+                                                    onClick={() => handleCopy(getWidgetEmbedSnippet(), 'website_snippet')}
+                                                    className="shrink-0"
+                                                >
+                                                    {copiedStates['website_snippet'] ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                                                </Button>
+                                            </div>
+                                            <p className="text-[11px] text-muted-foreground pt-1">
+                                                Paste this right before the closing <code>{'</body>'}</code> tag of your site. It renders a floating chat bubble that opens a chat panel talking to this agent — no other setup required.
+                                            </p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center text-center py-8 gap-4">
+                                        <div className="p-4 bg-primary/5 border border-primary/15 rounded-2xl text-primary">
+                                            <Globe className="h-8 w-8" />
+                                        </div>
+                                        <p className="text-xs text-muted-foreground max-w-sm">
+                                            This widget reuses the agent's API key. Generate one from the <strong>API</strong> tab first, then come back here for the embed snippet.
+                                        </p>
+                                        <Button
+                                            variant="secondary"
+                                            className="w-full"
+                                            onClick={() => setActiveTab('api')}
+                                        >
+                                            <Key className="h-4 w-4 mr-2" />
+                                            Go to API Tab
+                                        </Button>
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
                     </TabsContent>
