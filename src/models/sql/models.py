@@ -5,6 +5,7 @@ from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Integer, J
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from pgvector.sqlalchemy import Vector
+from src.core.encryption import EncryptedString
 from .base import Base
 
 class User(Base):
@@ -42,7 +43,7 @@ class LLMModelConfig(Base):
     name: Mapped[str] = mapped_column(String(255))
     provider: Mapped[str] = mapped_column(String(100))
     model_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    api_key: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    api_key: Mapped[Optional[str]] = mapped_column(EncryptedString, nullable=True)
     features: Mapped[List[str]] = mapped_column(JSONB, default=list)
     agent_ids: Mapped[List[str]] = mapped_column(JSONB, default=list)
     workflow_ids: Mapped[List[str]] = mapped_column(JSONB, default=list)

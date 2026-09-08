@@ -4,6 +4,8 @@ from typing import Optional
 from datetime import datetime, timezone
 from cryptography.fernet import Fernet, InvalidToken
 from loguru import logger
+from sqlalchemy import Text
+from sqlalchemy.types import TypeDecorator
 
 
 class EncryptionError(Exception):
@@ -196,3 +198,34 @@ def decrypt_credentials(encrypted: str) -> dict:
         Dictionary of credentials
     """
     return json.loads(crypto.decrypt(encrypted))
+
+
+class EncryptedString(TypeDecorator):
+    """
+    SQLAlchemy column type that transparently encrypts on write and
+    decrypts on read, storing Fernet ciphertext in an underlying TEXT
+    column. Column-level, so every query path (ORM attribute access,
+    Core select()/update(), raw session.get()) gets the same behavior
+    without call sites needing to know about it.
+
+    Rows written before this type was applied to a column are plain
+    text and won't parse as a Fernet token; process_result_value falls
+    back to returning them as-is so existing data keeps working until
+    it's migrated (see scripts/encrypt_llm_api_keys.py).
+    """
+
+    impl = Text
+    cache_ok = True
+
+    def process_bind_param(self, value: Optional[str], dialect) -> Optional[str]:
+        if not value:
+            return value
+        return crypto.encrypt(value)
+
+    def process_result_value(self, value: Optional[str], dialect) -> Optional[str]:
+        if not value:
+            return value
+        try:
+            return crypto.decrypt(value)
+        except DecryptionError:
+            return value
