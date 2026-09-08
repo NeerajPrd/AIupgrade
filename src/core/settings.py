@@ -18,12 +18,41 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Annotated, List, Optional
 
+from cryptography.fernet import Fernet
 from pydantic import AnyUrl, BeforeValidator, computed_field, model_validator
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
     SettingsConfigDict,
 )
+
+# Placeholder secret values that have shipped in this repo's own .env/.env.template
+# or compose files. Treated the same as "unset" so a copy-pasted example never
+# reaches a production boot.
+_INSECURE_SECRET_PLACEHOLDERS = {
+    "change-me-in-dev",
+    "fagoon-default-secret-change-in-production",
+    "changeme",
+    "change-me",
+    "change_me",
+    "changethis",
+    "secret",
+    "password",
+    "your-secret-key",
+    "your-secret-key-here",
+}
+_MIN_SECRET_LENGTH = 16
+
+
+def _weak_secret_reason(value: str) -> str | None:
+    """Returns why `value` is unsafe as a production secret, or None if it's fine."""
+    if not value:
+        return "not set"
+    if value.strip().lower() in _INSECURE_SECRET_PLACEHOLDERS:
+        return f"still set to the placeholder value {value!r}"
+    if len(value) < _MIN_SECRET_LENGTH:
+        return f"too short ({len(value)} chars, need at least {_MIN_SECRET_LENGTH})"
+    return None
 
 
 class JsonConfigSource(PydanticBaseSettingsSource):
@@ -327,6 +356,38 @@ class Settings(BaseSettings):
                 "Set REDIS_URL, or run with LITE_MODE=true."
             )
         # Lite mode ignores redis_url even if present (explicit contract).
+
+        # Full mode requires real secrets: lite mode is exempt because
+        # ensure_bootstrap() (src/core/bootstrap.py) auto-generates strong
+        # random jwt_secret/encryption_key values on first run in that mode.
+        if not self.lite_mode:
+            problems = []
+            for label, value in (
+                ("SECRET_KEY", self.SECRET_KEY),
+                ("jwt_secret (JWT_SECRET)", self.jwt_secret),
+                ("ENCRYPTION_KEY", self.ENCRYPTION_KEY),
+            ):
+                reason = _weak_secret_reason(value)
+                if reason:
+                    problems.append(f"  - {label}: {reason}")
+            if self.ENCRYPTION_KEY and not _weak_secret_reason(self.ENCRYPTION_KEY):
+                try:
+                    Fernet(self.ENCRYPTION_KEY.encode())
+                except Exception:
+                    problems.append("  - ENCRYPTION_KEY: not a valid Fernet key")
+            if problems:
+                raise ValueError(
+                    "Refusing to start in production/full mode (LITE_MODE=false) "
+                    "with missing or insecure secret(s):\n"
+                    + "\n".join(problems)
+                    + "\nGenerate strong values, e.g.:\n"
+                    '  python -c "import secrets; print(secrets.token_urlsafe(48))"'
+                    "   # SECRET_KEY / JWT_SECRET\n"
+                    '  python -c "from cryptography.fernet import Fernet; '
+                    'print(Fernet.generate_key().decode())"   # ENCRYPTION_KEY\n'
+                    "or run with LITE_MODE=true for zero-config self-hosted defaults."
+                )
+
         return self
 
     @staticmethod

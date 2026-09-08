@@ -139,6 +139,49 @@ def test_full_mode_requires_redis(tmp_path, monkeypatch):
         Settings(data_dir=str(tmp_path), lite_mode=False, REDIS_URL="", _env_file=None)
 
 
+def test_full_mode_rejects_missing_or_placeholder_secrets(tmp_path, monkeypatch):
+    _clean_env(monkeypatch)
+    from src.core.settings import Settings
+
+    with pytest.raises(ValueError):
+        Settings(
+            data_dir=str(tmp_path), lite_mode=False,
+            REDIS_URL="redis://localhost:6379/0", _env_file=None,
+        )
+
+    with pytest.raises(ValueError):
+        Settings(
+            data_dir=str(tmp_path), lite_mode=False,
+            REDIS_URL="redis://localhost:6379/0",
+            SECRET_KEY="change-me-in-dev",
+            jwt_secret="short",
+            ENCRYPTION_KEY="not-a-fernet-key",
+            _env_file=None,
+        )
+
+
+def test_full_mode_accepts_strong_secrets(tmp_path, monkeypatch):
+    # Routed through env vars (not constructor kwargs) since ENCRYPTION_KEY is
+    # only reliably case-matched to the uppercase field via the env source -
+    # a real deployment sets these as env vars too.
+    _clean_env(monkeypatch)
+    from cryptography.fernet import Fernet
+
+    from src.core.settings import get_settings
+
+    monkeypatch.setenv("LITE_MODE", "false")
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("REDIS_URL", "redis://localhost:6379/0")
+    monkeypatch.setenv("SECRET_KEY", "a" * 48)
+    monkeypatch.setenv("JWT_SECRET", "b" * 48)
+    monkeypatch.setenv("ENCRYPTION_KEY", Fernet.generate_key().decode())
+
+    get_settings.cache_clear()
+    s = get_settings(env_file=None)
+    assert s.SECRET_KEY == "a" * 48
+    assert s.jwt_secret == "b" * 48
+
+
 def test_features_parsing(tmp_path, monkeypatch):
     _clean_env(monkeypatch)
     monkeypatch.setenv("LITE_MODE", "true")
