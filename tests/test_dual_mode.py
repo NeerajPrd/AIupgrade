@@ -326,10 +326,15 @@ async def test_runtime_full_binds_redis_backends(tmp_path, monkeypatch):
         pytest.skip("redis not installed (lite-only environment) - full path not exercised here")
 
     _clean_env(monkeypatch)
+    from cryptography.fernet import Fernet
+
     monkeypatch.setenv("LITE_MODE", "false")
     monkeypatch.setenv("DATA_DIR", str(tmp_path))
     monkeypatch.setenv("REDIS_URL", "redis://localhost:6379/0")
     monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://t:t@localhost:5432/t")
+    monkeypatch.setenv("SECRET_KEY", "a" * 48)
+    monkeypatch.setenv("JWT_SECRET", "b" * 48)
+    monkeypatch.setenv("ENCRYPTION_KEY", Fernet.generate_key().decode())
 
     from src.core.settings import get_settings
     get_settings.cache_clear()
@@ -338,7 +343,7 @@ async def test_runtime_full_binds_redis_backends(tmp_path, monkeypatch):
     # isn't present yet, treat as a skip rather than a hard failure.
     try:
         from src.core.runtime import build_runtime
-        rt = await build_runtime(get_settings())
+        rt = await build_runtime(get_settings(env_file=None))
     except ModuleNotFoundError as e:
         pytest.skip(f"full-mode dependency missing: {e}")
         return
