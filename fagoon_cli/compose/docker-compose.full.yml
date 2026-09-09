@@ -1,6 +1,6 @@
 services:
   app:
-    image: ghcr.io/fagoon-ai/upgrade:2.0.0
+    image: ghcr.io/neerajprd/aiupgrade:latest
     restart: unless-stopped
     ports:
       - "8000:8000"
@@ -31,7 +31,7 @@ services:
       retries: 5
 
   worker:
-    image: ghcr.io/fagoon-ai/upgrade:2.0.0
+    image: ghcr.io/neerajprd/aiupgrade:latest
     command: uv run celery -A src.core.task_processing.celery_app worker -P eventlet -c 50
     environment:
       LITE_MODE: "false"

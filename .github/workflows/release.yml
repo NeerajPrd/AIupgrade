@@ -11,7 +11,7 @@ permissions:
   actions: read
 
 env:
-  IMAGE: ghcr.io/fagoon-ai/upgrade
+  IMAGE: ghcr.io/neerajprd/aiupgrade
 
 jobs:
   test:

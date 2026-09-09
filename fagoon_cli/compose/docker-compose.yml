@@ -1,6 +1,6 @@
 services:
   app:
-    image: ghcr.io/fagoon-ai/upgrade:2.0.0
+    image: ghcr.io/neerajprd/aiupgrade:latest
     restart: unless-stopped
     ports:
       - "8000:8000"
