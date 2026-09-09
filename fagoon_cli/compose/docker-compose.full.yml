@@ -15,6 +15,19 @@ services:
       EVOLUTION_API_KEY: "${EVOLUTION_API_KEY:-}"
       EVOLUTION_API_URL: "http://evolution-api:8080"
       WEBHOOK_URL: "${WEBHOOK_URL:-http://app:8000}"
+      # Required in full mode - src/core/settings.py refuses to boot without
+      # real values here (see the secret-enforcement check). Generate with:
+      #   python -c "import secrets; print(secrets.token_urlsafe(48))"
+      #   python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+      ENV: "${ENV:-production}"
+      SECRET_KEY: "${SECRET_KEY}"
+      JWT_SECRET: "${JWT_SECRET}"
+      ENCRYPTION_KEY: "${ENCRYPTION_KEY}"
+      # Your public domain(s) - required for CORS and for auth cookies to be
+      # set correctly once ENV=production (see COOKIE_DOMAIN_1 below).
+      FRONTEND_HOST: "${FRONTEND_HOST:-*}"
+      NEXT_PUBLIC_BASE_URL: "${NEXT_PUBLIC_BASE_URL:-http://localhost:8000}"
+      COOKIE_DOMAIN_1: "${COOKIE_DOMAIN_1:-}"
     volumes:
       - ${FAGOON_DATA_DIR:-~/.fagoon}:/data
     depends_on:
@@ -39,6 +52,10 @@ services:
       DATABASE_URL: postgresql+asyncpg://fagoon:fagoon@db:5432/fagoon
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/1
+      ENV: "${ENV:-production}"
+      SECRET_KEY: "${SECRET_KEY}"
+      JWT_SECRET: "${JWT_SECRET}"
+      ENCRYPTION_KEY: "${ENCRYPTION_KEY}"
     volumes:
       - ${FAGOON_DATA_DIR:-~/.fagoon}:/data
     depends_on:
