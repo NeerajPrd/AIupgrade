@@ -96,6 +96,10 @@ fagoon = "fagoon_cli.main:main"
 asyncio_mode = "auto"
 testpaths = ["tests"]
 pythonpath = ["."]
+# A stray root-level __init__.py makes pytest's default "prepend" import mode
+# treat the checkout dir itself as a package, which fails to import under
+# that name. importlib mode collects tests without relying on that inference.
+addopts = "--import-mode=importlib"
 
 [build-system]
 requires = ["hatchling"]
