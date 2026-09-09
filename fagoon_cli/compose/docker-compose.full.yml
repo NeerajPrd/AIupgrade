@@ -28,6 +28,8 @@ services:
       FRONTEND_HOST: "${FRONTEND_HOST:-*}"
       NEXT_PUBLIC_BASE_URL: "${NEXT_PUBLIC_BASE_URL:-http://localhost:8000}"
       COOKIE_DOMAIN_1: "${COOKIE_DOMAIN_1:-}"
+      # Comma-separated list, e.g. https://yourdomain.com,https://app.yourdomain.com
+      ALLOWED_CORS_ORIGIN: "${ALLOWED_CORS_ORIGIN:-http://localhost:3000,http://localhost:8000}"
     volumes:
       - ${FAGOON_DATA_DIR:-~/.fagoon}:/data
     depends_on:

@@ -115,14 +115,18 @@ class Settings(BaseSettings):
     def all_cors_origins(self) -> list[str]:
         return [str(origin).rstrip("/") for origin in self.BACKEND_CORS_ORIGINS] + [self.FRONTEND_HOST]
 
-    ALLOWED_CORS_ORIGIN: List[str] = [
+    # Set via env var to add your own domain(s) without editing source or
+    # rebuilding the image, e.g. ALLOWED_CORS_ORIGIN=https://yourdomain.com
+    # or a comma-separated list for multiple origins. Falls back to this
+    # localhost-only default when unset.
+    ALLOWED_CORS_ORIGIN: Annotated[
+        List[str] | str, BeforeValidator(parse_cors)
+    ] = [
         "http://localhost:3000",
-        "https://develop-upgrade.fagoon.ai",
-        "https://upgrade.fagoon.ai",
-        "http://0.0.0.0:2321",
+        "http://127.0.0.1:3000",
         "http://localhost:8000",
-        "https://upgrade.devfagoon.online",# new added
-        "http://localhost:9999", # Added for testing QR.html
+        "http://0.0.0.0:2321",
+        "http://localhost:9999",  # QR.html manual testing
         "http://127.0.0.1:9999",
     ]
 
