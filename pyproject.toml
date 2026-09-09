@@ -12,7 +12,10 @@ dependencies = [
     "fastapi>=0.115.11",
     "google-cloud-storage>=3.1.0",
     "google-genai>=1.11.0",
-    "gpt-researcher>=0.15.0",
+    # 0.16.0's published wheel is missing `from typing import Any, List` in
+    # gpt_researcher/actions/query_processing.py (NameError at import time) -
+    # a real upstream regression, not a version we've verified working.
+    "gpt-researcher>=0.15.0,<0.16.0",
     "groq>=0.18.0",
     "gunicorn>=23.0.0",
     "huggingface-hub>=0.29.2",
