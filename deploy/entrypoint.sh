@@ -70,6 +70,14 @@ if [ -f "scripts/auto_setup_user.py" ]; then
   uv run python scripts/auto_setup_user.py 2>/dev/null || echo "User seeding skipped."
 fi
 
+# ---- If a command was passed (e.g. the Celery worker), run that instead
+# of the web app. Migrations/extensions above still apply so the worker
+# can also be started standalone. ----
+if [ "$#" -gt 0 ]; then
+  echo "Custom command detected, skipping frontend/backend startup: $*"
+  exec "$@"
+fi
+
 # ---- Start frontend ----
 if [ -d "/app/frontend/.next" ]; then
   echo "Starting frontend on port 3000..."
