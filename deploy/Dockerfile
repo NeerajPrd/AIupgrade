@@ -25,8 +25,15 @@ COPY . .
 
 # Build frontend
 WORKDIR /app/frontend
-ENV NEXT_PUBLIC_BASE_URL=http://localhost:8000
-ENV NEXT_PUBLIC_WEBSOCKET_URL=ws://localhost:8000/ws-api
+# NEXT_PUBLIC_* vars are baked into the client bundle at build time, so they
+# must be passed as build args (not just container env) to differ per
+# deployment. Defaults keep local `docker build` with no args working.
+ARG NEXT_PUBLIC_BASE_URL=http://localhost:8000
+ARG NEXT_PUBLIC_API_URL=http://localhost:8000
+ARG NEXT_PUBLIC_WEBSOCKET_URL=ws://localhost:8000/ws-api
+ENV NEXT_PUBLIC_BASE_URL=$NEXT_PUBLIC_BASE_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_WEBSOCKET_URL=$NEXT_PUBLIC_WEBSOCKET_URL
 ENV NEXT_PUBLIC_DISABLE_AUTH=false
 RUN npm ci --production=false && npm run build
 WORKDIR /app

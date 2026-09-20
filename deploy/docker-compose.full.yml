@@ -1,6 +1,16 @@
 services:
   app:
-    build: { context: .., dockerfile: deploy/Dockerfile }
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      # NEXT_PUBLIC_* vars are baked into the Next.js client bundle at build
+      # time, so they must be passed here (not just under `environment:`
+      # below, which only affects the running container after the bundle
+      # already exists).
+      args:
+        NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-${NEXT_PUBLIC_BASE_URL}}
+        NEXT_PUBLIC_WEBSOCKET_URL: ${NEXT_PUBLIC_WEBSOCKET_URL}
     restart: unless-stopped
     ports:
       - "8003:8000"
