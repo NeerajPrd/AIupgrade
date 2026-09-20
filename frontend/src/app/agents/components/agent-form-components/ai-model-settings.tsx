@@ -77,9 +77,10 @@ const AIModelSettingsForm = () => {
 
                 <div className="space-y-2">
                     <Label htmlFor="api_key">API Key (Optional)</Label>
-                    <Input 
-                        id="api_key" 
+                    <Input
+                        id="api_key"
                         type="password"
+                        autoComplete="new-password"
                         placeholder="Enter your API key"
                         {...register('model_settings.api_key')}
                     />

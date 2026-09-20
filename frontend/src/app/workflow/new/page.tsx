@@ -316,6 +316,7 @@ const FagoonAgentsPage: NextPage = () => {
             </label>
             <input
               type="password"
+              autoComplete="new-password"
               id="apiKey"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}

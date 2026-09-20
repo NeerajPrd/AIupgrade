@@ -301,18 +301,20 @@ export function DeployAgentModal({ isOpen, onClose, agentId, agentName }: Deploy
                                             </div>
                                             <div className="space-y-1">
                                                 <Label>App Secret</Label>
-                                                <Input 
+                                                <Input
                                                     type="password"
-                                                    placeholder="From your Meta App Dashboard" 
+                                                    autoComplete="new-password"
+                                                    placeholder="From your Meta App Dashboard"
                                                     value={whatsappConfig.app_secret}
                                                     onChange={e => setWhatsappConfig({...whatsappConfig, app_secret: e.target.value})}
                                                 />
                                             </div>
                                             <div className="space-y-1">
                                                 <Label>Permanent Access Token</Label>
-                                                <Input 
+                                                <Input
                                                     type="password"
-                                                    placeholder="EAAL..." 
+                                                    autoComplete="new-password"
+                                                    placeholder="EAAL..."
                                                     value={whatsappConfig.access_token}
                                                     onChange={e => setWhatsappConfig({...whatsappConfig, access_token: e.target.value})}
                                                 />
@@ -367,18 +369,20 @@ export function DeployAgentModal({ isOpen, onClose, agentId, agentName }: Deploy
                                     </div>
                                     <div className="space-y-1">
                                         <Label>App Secret</Label>
-                                        <Input 
+                                        <Input
                                             type="password"
-                                            placeholder="From your Meta App Dashboard" 
+                                            autoComplete="new-password"
+                                            placeholder="From your Meta App Dashboard"
                                             value={messengerConfig.app_secret}
                                             onChange={e => setMessengerConfig({...messengerConfig, app_secret: e.target.value})}
                                         />
                                     </div>
                                     <div className="space-y-1">
                                         <Label>Page Access Token</Label>
-                                        <Input 
+                                        <Input
                                             type="password"
-                                            placeholder="EAAL..." 
+                                            autoComplete="new-password"
+                                            placeholder="EAAL..."
                                             value={messengerConfig.page_access_token}
                                             onChange={e => setMessengerConfig({...messengerConfig, page_access_token: e.target.value})}
                                         />
@@ -413,9 +417,10 @@ export function DeployAgentModal({ isOpen, onClose, agentId, agentName }: Deploy
                                 <div className="space-y-3">
                                     <div className="space-y-1">
                                         <Label>Bot Token</Label>
-                                        <Input 
+                                        <Input
                                             type="password"
-                                            placeholder="e.g. 123456789:ABCdefGHIjklmNOPQrsTUVwxyZ" 
+                                            autoComplete="new-password"
+                                            placeholder="e.g. 123456789:ABCdefGHIjklmNOPQrsTUVwxyZ"
                                             value={telegramConfig.bot_token}
                                             onChange={e => setTelegramConfig({...telegramConfig, bot_token: e.target.value})}
                                         />

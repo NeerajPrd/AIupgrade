@@ -268,6 +268,7 @@ export function AddModelModal({ isOpen, onClose, editingModelId }: AddModelModal
                 </label>
                 <Input
                   type="password"
+                  autoComplete="new-password"
                   placeholder={editingModelId ? "••••••••••••" : "Enter your API key"}
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
