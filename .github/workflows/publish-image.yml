@@ -63,9 +63,9 @@ jobs:
           platforms: linux/amd64
           push: true
           build-args: |
-            NEXT_PUBLIC_BASE_URL=${{ vars.NEXT_PUBLIC_BASE_URL }}
-            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
-            NEXT_PUBLIC_WEBSOCKET_URL=${{ vars.NEXT_PUBLIC_WEBSOCKET_URL }}
+            NEXT_PUBLIC_BASE_URL=${{ vars.NEXT_PUBLIC_BASE_URL || 'http://localhost:8000' }}
+            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL || 'http://localhost:8000' }}
+            NEXT_PUBLIC_WEBSOCKET_URL=${{ vars.NEXT_PUBLIC_WEBSOCKET_URL || 'ws://localhost:8000/ws-api' }}
           tags: |
             ${{ steps.image.outputs.name }}:latest
             ${{ steps.image.outputs.name }}:${{ github.sha }}
