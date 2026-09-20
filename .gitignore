@@ -3,6 +3,7 @@ logs/
 google_client_config.json
 test.py
 assets/
+!marketing-site/assets/
 start.ps1.txt
 
 # Byte-compiled / optimized / DLL files

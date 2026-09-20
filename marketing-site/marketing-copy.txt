@@ -1,0 +1,24 @@
+Hero Section:
+
+Headline: Never Lose Another Customer to Silence.
+
+Subheadline: Spirit Monkey builds AI agents and chatbots that talk to your customers and leads around the clock — answering questions, resolving concerns, and closing sales while you focus on running your business.
+
+CTA button: "See It In Action" (scrolls to the demo widget) or "Talk to Us"
+
+Features Section (3-4 short blocks, each with a heading + one-liner):
+
+🕐 Always Open, Always Selling
+Your business never sleeps online. Our AI agents engage every visitor instantly — day or night, weekday or holiday — turning traffic into conversations, and conversations into customers.
+
+💬 Customers Who Feel Heard
+Slow replies cost sales and trust. Our chatbots respond instantly with accurate answers pulled from your own business information, keeping customers satisfied and coming back.
+
+📈 Built to Convert, Not Just Chat
+This isn't a generic FAQ bot. Every conversation is designed to move leads forward — answering objections, capturing interest, and guiding visitors toward a sale.
+
+⚡ Live on Your Website in Minutes
+No developers, no complicated setup. We configure your AI agent with your business details, and you paste one line of code onto your site — you're live the same day.
+
+Optional closing line before Contact section:
+"Built for small and medium businesses who want enterprise-level customer engagement — without the enterprise price tag or complexity."
