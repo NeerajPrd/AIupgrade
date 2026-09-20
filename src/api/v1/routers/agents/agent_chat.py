@@ -1,11 +1,13 @@
 import asyncio
+import calendar
 from fastapi import APIRouter, Depends, status, Request, BackgroundTasks
 from fastapi.responses import JSONResponse, StreamingResponse
 from loguru import logger
 from pydantic import BaseModel, Field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 import uuid
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.schemas.agents_chat import (
     AgentChatResponseModel,
@@ -19,8 +21,11 @@ from src.schemas.agent_enums import ToolType
 from src.schemas.llm import BaseLLMConfig
 from src.schemas.common import SuccessResponse, FailureResponse, ConversationRoleEnum
 from src.services.agents.chat import AgentChatService
+from src.services.agents.export import build_conversations_docx
 from src.services.nosql.postgres_services import PostgresServices
+from src.core.database import get_db
 from src.core.globals import get_postgres_services
+from src.models.sql.models import Agent
 from src.utils.common import send_event_data
 from src.services.agents.llm_tasks import generate_general_chat_response
 from src.core.settings import system_setting
@@ -143,6 +148,59 @@ async def get_all_conversations_list(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
         
+
+@chat_router.get("/{agent_id}/export", operation_id="export_agent_conversations")
+async def export_conversations(
+    request: Request,
+    agent_id: str,
+    year: int,
+    month: int,
+    db: AsyncSession = Depends(get_db),
+):
+    """Download all of an agent's conversations for a given month as a .docx report."""
+    try:
+        if not (1 <= month <= 12):
+            return JSONResponse(
+                content=FailureResponse(status="fail", message="month must be between 1 and 12").model_dump(),
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user_id = request.state.user_id
+        agent = await db.get(Agent, uuid.UUID(agent_id))
+        if not agent:
+            return JSONResponse(
+                content=FailureResponse(status="fail", message="Agent not found").model_dump(),
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+        if str(agent.user_id) != str(user_id):
+            return JSONResponse(
+                content=FailureResponse(status="fail", message="Not your agent").model_dump(),
+                status_code=status.HTTP_403_FORBIDDEN,
+            )
+
+        start = datetime(year, month, 1, tzinfo=timezone.utc)
+        last_day = calendar.monthrange(year, month)[1]
+        end = datetime(year, month, last_day, 23, 59, 59, 999999, tzinfo=timezone.utc)
+
+        chat_service = request.app.state.agent_chat_service
+        conversations = await chat_service.list_conversations_for_export(agent_id, start, end)
+
+        period_label = f"{calendar.month_name[month]} {year}"
+        buffer = build_conversations_docx(agent.name, period_label, conversations)
+
+        filename = f"{agent.name.replace(' ', '_')}_{year}-{month:02d}_conversations.docx"
+        return StreamingResponse(
+            buffer,
+            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+    except Exception as e:
+        logger.error(f"Unable to export conversations for agent {agent_id}: {e}", exc_info=True)
+        return JSONResponse(
+            content=FailureResponse(status="fail", message="An error occurred").model_dump(),
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
 
 @chat_router.get("/{conversation_id}", operation_id="get_chat_by_id")
 async def get_chat(

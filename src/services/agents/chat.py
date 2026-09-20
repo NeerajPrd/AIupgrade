@@ -83,6 +83,42 @@ class AgentChatService:
                 return True
         return False
 
+    async def list_conversations_for_export(self, agent_id: str, start: datetime, end: datetime) -> List[Dict[str, Any]]:
+        """All conversations (with full message bodies) for an agent within [start, end)."""
+        async with self.postgres_manager.get_session() as session:
+            stmt = (
+                select(AgentChatHistory)
+                .where(
+                    AgentChatHistory.agent_id == uuid.UUID(agent_id),
+                    AgentChatHistory.is_deleted == False,
+                    AgentChatHistory.created_at >= start,
+                    AgentChatHistory.created_at < end,
+                )
+                .order_by(AgentChatHistory.created_at.asc())
+            )
+            histories = (await session.execute(stmt)).scalars().all()
+
+            conversations = []
+            for history in histories:
+                msg_stmt = (
+                    select(AgentChat)
+                    .where(AgentChat.history_id == history.id)
+                    .order_by(AgentChat.created_at.asc())
+                )
+                messages = (await session.execute(msg_stmt)).scalars().all()
+                conversations.append({
+                    "title": history.title,
+                    "created_at": history.created_at.isoformat(),
+                    "messages": [
+                        {
+                            "role": m.role,
+                            "content": m.content,
+                            "created_at": m.created_at.isoformat(),
+                        } for m in messages
+                    ],
+                })
+            return conversations
+
     async def get_chat_history_metadata(self, history_id: str) -> Optional[AgentChatHistory]:
         """Fetch the AgentChatHistory object for metadata access."""
         async with self.postgres_manager.get_session() as session:

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Copy, CheckCircle2, Save, Loader2, MessageSquare, Key, Eye, EyeOff, Trash2, Globe } from "lucide-react"
+import { Copy, CheckCircle2, Save, Loader2, MessageSquare, Key, Eye, EyeOff, Trash2, Globe, Download, FileText } from "lucide-react"
 import { FaTelegramPlane, FaWhatsapp, FaFacebookMessenger } from "react-icons/fa"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -17,6 +17,7 @@ import {
     publishAgentApi,
     getAgentApiInfo,
     revokeAgentApi,
+    exportAgentConversations,
 } from "@/lib/api/agent"
 import { showSuccessToast, showErrorToast } from "@/utils/toast"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -51,6 +52,9 @@ export function DeployAgentModal({ isOpen, onClose, agentId, agentName }: Deploy
     // API tab states
     const [revealApiKey, setRevealApiKey] = useState(false)
     const [oneTimeApiKey, setOneTimeApiKey] = useState<string | null>(null)
+
+    // Export tab state — defaults to the current month
+    const [exportMonth, setExportMonth] = useState(() => new Date().toISOString().slice(0, 7))
 
     const { data: webhookConfig, isLoading: isLoadingWebhooks } = useQuery({
         queryKey: ['agent-webhook-config', agentId],
@@ -93,6 +97,28 @@ export function DeployAgentModal({ isOpen, onClose, agentId, agentName }: Deploy
         },
         onError: () => {
             showErrorToast("Failed to revoke API credentials.")
+        }
+    })
+
+    const exportMutation = useMutation({
+        mutationFn: () => {
+            const [yearStr, monthStr] = exportMonth.split("-")
+            return exportAgentConversations(agentId, Number(yearStr), Number(monthStr))
+        },
+        onSuccess: (blob) => {
+            const url = window.URL.createObjectURL(blob)
+            const link = document.createElement("a")
+            link.href = url
+            link.download = `${agentName.replace(/\s+/g, "_")}_${exportMonth}_conversations.docx`
+            document.body.appendChild(link)
+            link.click()
+            link.remove()
+            window.URL.revokeObjectURL(url)
+            showSuccessToast("Conversations exported.")
+        },
+        onError: (error: any) => {
+            const msg = error?.response?.data?.message || "Failed to export conversations"
+            showErrorToast(msg)
         }
     })
 
@@ -251,7 +277,7 @@ export function DeployAgentModal({ isOpen, onClose, agentId, agentName }: Deploy
                 </DialogHeader>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-4">
-                    <TabsList className="grid w-full grid-cols-5">
+                    <TabsList className="grid w-full grid-cols-6">
                         <TabsTrigger value="whatsapp" className="flex items-center gap-2">
                             <FaWhatsapp className="text-[#25D366]" /> WhatsApp
                         </TabsTrigger>
@@ -266,6 +292,9 @@ export function DeployAgentModal({ isOpen, onClose, agentId, agentName }: Deploy
                         </TabsTrigger>
                         <TabsTrigger value="api" className="flex items-center gap-2">
                             <Key className="h-4 w-4" /> API
+                        </TabsTrigger>
+                        <TabsTrigger value="export" className="flex items-center gap-2">
+                            <FileText className="h-4 w-4" /> Export
                         </TabsTrigger>
                     </TabsList>
 
@@ -624,6 +653,41 @@ export function DeployAgentModal({ isOpen, onClose, agentId, agentName }: Deploy
                                         </Button>
                                     </div>
                                 )}
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    {/* EXPORT TAB */}
+                    <TabsContent value="export" className="mt-4 space-y-4">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-lg flex items-center gap-2">
+                                    <FileText className="h-4.5 w-4.5" /> Export Conversations
+                                </CardTitle>
+                                <CardDescription>
+                                    Download every conversation <strong>{agentName}</strong> had in a given month as a Word document — client messages and agent replies, labeled and timestamped.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="space-y-1">
+                                    <Label htmlFor="export-month" className="text-xs text-muted-foreground">Month</Label>
+                                    <Input
+                                        id="export-month"
+                                        type="month"
+                                        value={exportMonth}
+                                        onChange={e => setExportMonth(e.target.value)}
+                                        max={new Date().toISOString().slice(0, 7)}
+                                        className="w-full"
+                                    />
+                                </div>
+                                <Button
+                                    className="w-full"
+                                    onClick={() => exportMutation.mutate()}
+                                    disabled={exportMutation.isPending || !exportMonth}
+                                >
+                                    {exportMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Download className="h-4 w-4 mr-2" />}
+                                    Download .docx
+                                </Button>
                             </CardContent>
                         </Card>
                     </TabsContent>

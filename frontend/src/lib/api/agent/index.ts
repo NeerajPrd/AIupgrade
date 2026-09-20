@@ -95,3 +95,13 @@ export const revokeAgentApi = async (agentId: string) => {
   const response = await axiosInstance.delete(`/api/v1/agent/${agentId}/api`);
   return response.data;
 };
+
+//* Conversation export (Word doc of a month's conversations)
+
+export const exportAgentConversations = async (agentId: string, year: number, month: number) => {
+  const response = await axiosInstance.get(
+    `/api/v1/agent/chat/${agentId}/export`,
+    { params: { year, month }, responseType: "blob" }
+  );
+  return response.data as Blob;
+};
