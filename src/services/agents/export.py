@@ -1,10 +1,15 @@
 """Build a Word document report of an agent's conversations for a date range."""
 
 import io
+import re
 from datetime import datetime
 from typing import Any, Dict, List
 
 from docx import Document
+
+_BOLD_RE = re.compile(r"\*\*(.+?)\*\*")
+_BULLET_RE = re.compile(r"^\s*[*-]\s+(.+)")
+_NUMBERED_RE = re.compile(r"^\s*\d+\.\s+(.+)")
 
 
 def build_conversations_docx(agent_name: str, period_label: str, conversations: List[Dict[str, Any]]) -> io.BytesIO:
@@ -34,9 +39,10 @@ def build_conversations_docx(agent_name: str, period_label: str, conversations: 
             label = "Client" if role == "user" else agent_name if role == "assistant" else (role or "Unknown").title()
             timestamp = _format_timestamp(msg.get("created_at"))
 
-            p = document.add_paragraph()
-            p.add_run(f"{label} ({timestamp}): ").bold = True
-            p.add_run(msg.get("content") or "")
+            label_p = document.add_paragraph()
+            label_p.add_run(f"{label} ({timestamp}):").bold = True
+
+            _add_message_body(document, msg.get("content") or "")
 
         document.add_paragraph("")
 
@@ -44,6 +50,50 @@ def build_conversations_docx(agent_name: str, period_label: str, conversations: 
     document.save(buffer)
     buffer.seek(0)
     return buffer
+
+
+def _add_message_body(document: Document, content: str) -> None:
+    """
+    Renders **bold** and bullet/numbered list lines as real Word formatting
+    instead of leaving the raw Markdown syntax in the exported text — the
+    same basic set the widget renders, applied here via python-docx's own
+    run/style model rather than HTML.
+    """
+    prose_para = None
+
+    def flush_prose():
+        nonlocal prose_para
+        prose_para = None
+
+    for line in content.split("\n"):
+        bullet_match = _BULLET_RE.match(line)
+        numbered_match = _NUMBERED_RE.match(line)
+
+        if bullet_match:
+            flush_prose()
+            _add_inline_bold_runs(document.add_paragraph(style="List Bullet"), bullet_match.group(1))
+        elif numbered_match:
+            flush_prose()
+            _add_inline_bold_runs(document.add_paragraph(style="List Number"), numbered_match.group(1))
+        elif line.strip() == "":
+            flush_prose()
+        else:
+            if prose_para is None:
+                prose_para = document.add_paragraph()
+            else:
+                prose_para.add_run().add_break()
+            _add_inline_bold_runs(prose_para, line)
+
+
+def _add_inline_bold_runs(paragraph, text: str) -> None:
+    pos = 0
+    for m in _BOLD_RE.finditer(text):
+        if m.start() > pos:
+            paragraph.add_run(text[pos:m.start()])
+        paragraph.add_run(m.group(1)).bold = True
+        pos = m.end()
+    if pos < len(text):
+        paragraph.add_run(text[pos:])
 
 
 def _format_timestamp(value: Any) -> str:
