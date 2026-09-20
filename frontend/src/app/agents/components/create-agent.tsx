@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Check, ChevronRight, FileText, ImageIcon, Settings, Sparkles, Wrench } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -72,8 +72,18 @@ export function CreateAgentDialog({ children, agentToEdit, isOpen, onClose }: { 
 
     const { handleSubmit, reset, formState: { errors } } = methods
 
+    // Tracks which agent's data the form was last initialized from, so a
+    // background refetch of `agentToEdit` (e.g. React Query's
+    // refetchOnWindowFocus firing while the dialog is open) doesn't blow
+    // away unsaved typing by re-running reset() on every new object
+    // reference — only a genuine open-for-a-different-agent should reset.
+    const initializedForRef = useRef<string | null>(null)
+
     useEffect(() => {
         if (agentToEdit && open) {
+            const agentKey = agentToEdit.id || agentToEdit._id || null
+            if (initializedForRef.current === agentKey) return
+            initializedForRef.current = agentKey
             reset({
                 profile: {
                     agent_name: agentToEdit.name || agentToEdit.profile?.agent_name || "",
@@ -96,6 +106,7 @@ export function CreateAgentDialog({ children, agentToEdit, isOpen, onClose }: { 
                 tools: agentToEdit.tools || [],
             })
         } else if (!open) {
+            initializedForRef.current = null
             reset(defaultValues)
             setActiveTab("basic")
         }

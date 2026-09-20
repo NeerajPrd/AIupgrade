@@ -183,7 +183,14 @@ class AgentManager:
             std_fields = {"name", "instructions"}
             update_dict = {k: v for k, v in data.items() if k in std_fields}
             config_updates = {k: v for k, v in data.items() if k not in std_fields}
-            
+
+            # `instructions` (the DB column chat_orchestrator actually reads) and
+            # `system_prompt` (what the Edit Agent form saves, inside `config`) are
+            # meant to be the same value. Keep them in sync here so an edit to one
+            # takes effect for the live agent instead of silently going unused.
+            if "system_prompt" in config_updates and "instructions" not in update_dict:
+                update_dict["instructions"] = config_updates["system_prompt"]
+
             if config_updates:
                 sql_agent = await pg_services.get_agent_by_id(agent_uuid)
                 if sql_agent:
