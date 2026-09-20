@@ -235,7 +235,11 @@ export function DeployAgentModal({ isOpen, onClose, agentId, agentName }: Deploy
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+            <DialogContent
+                className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto"
+                // Only the X button should discard typed channel credentials.
+                onInteractOutside={(e) => e.preventDefault()}
+            >
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <MessageSquare className="h-5 w-5 text-primary" />

@@ -146,7 +146,11 @@ export function CreateAgentDialog({ children, agentToEdit, isOpen, onClose }: { 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
             {children && <DialogTrigger asChild>{children}</DialogTrigger>}
-            <DialogContent className="w-[95vw] md:max-w-[900px] p-0 h-[90vh] md:h-[80vh] max-h-[700px] flex overflow-hidden">
+            <DialogContent
+                className="w-[95vw] md:max-w-[900px] p-0 h-[90vh] md:h-[80vh] max-h-[700px] flex overflow-hidden"
+                // Only the X button or Cancel should discard a partially-filled form.
+                onInteractOutside={(e) => e.preventDefault()}
+            >
                 <FormProvider {...methods}>
                     <SidebarProvider defaultOpen={true} className="min-h-0 h-full w-full">
                         <Sidebar className="w-16 md:w-[240px] border-r pt-6 md:pr-2" collapsible="none">

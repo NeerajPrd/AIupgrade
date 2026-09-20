@@ -46,7 +46,8 @@ export function SaveWorkflowDialog() {
       <DialogTrigger asChild>
         <Button variant="outline">Save Workflow</Button>
       </DialogTrigger>
-      <DialogContent>
+      {/* Only Save/Update/X should dismiss this, not an accidental outside click. */}
+      <DialogContent onInteractOutside={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle>Save Workflow</DialogTitle>
         </DialogHeader>

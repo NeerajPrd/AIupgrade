@@ -191,7 +191,11 @@ export function AddModelModal({ isOpen, onClose, editingModelId }: AddModelModal
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl bg-white dark:bg-[#2e2e2e] border border-slate-200 dark:border-gray-800 text-slate-800 dark:text-gray-200 max-h-[90vh] overflow-y-auto">
+      <DialogContent
+        className="max-w-2xl bg-white dark:bg-[#2e2e2e] border border-slate-200 dark:border-gray-800 text-slate-800 dark:text-gray-200 max-h-[90vh] overflow-y-auto"
+        // Only the X button should discard a typed API key / provider config.
+        onInteractOutside={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-slate-900 dark:text-gray-100">
             {editingModelId ? "Edit Model Configuration" : "Add New Model Configuration"}

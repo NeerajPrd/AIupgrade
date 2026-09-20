@@ -120,7 +120,11 @@ const KnowledgeBasePage = () => {
               <Plus className="mr-2 h-4 w-4" /> Add Source
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent
+            className="sm:max-w-[425px]"
+            // Only the X button should discard typed source details.
+            onInteractOutside={(e) => e.preventDefault()}
+          >
             <DialogHeader>
               <DialogTitle>Add New Source</DialogTitle>
               <DialogDescription>
