@@ -92,6 +92,8 @@
     ".fw-msg{max-width:80%;padding:9px 12px;border-radius:12px;font-size:13.5px;line-height:1.4;white-space:pre-wrap;word-wrap:break-word}" +
     ".fw-msg-user{align-self:flex-end;background:" + PRIMARY_COLOR + ";color:#fff;border-bottom-right-radius:3px}" +
     ".fw-msg-bot{align-self:flex-start;background:#fff;color:#1f2937;border:1px solid #e5e7eb;border-bottom-left-radius:3px}" +
+    ".fw-msg-bot ul,.fw-msg-bot ol{margin:4px 0;padding-left:18px}" +
+    ".fw-msg-bot li{margin:2px 0}" +
     ".fw-msg-error{align-self:flex-start;background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;border-bottom-left-radius:3px}" +
     ".fw-msg-typing{align-self:flex-start;background:#fff;border:1px solid #e5e7eb;border-bottom-left-radius:3px;padding:11px 14px;display:flex;gap:4px}" +
     ".fw-dot{width:6px;height:6px;border-radius:50%;background:#9ca3af;animation:fw-blink 1.2s infinite ease-in-out}" +
@@ -157,10 +159,66 @@
   root.appendChild(bubble);
   shadow.appendChild(root);
 
+  function escapeHtml(str) {
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  // Minimal, safe Markdown -> HTML for bot replies. Escapes everything first
+  // (so this is never a vector for injected HTML/scripts), then recognizes
+  // just what LLM responses commonly use: **bold**, "- "/"* " bullet lists,
+  // "1. " numbered lists, and line breaks. Not a full Markdown parser.
+  function formatMessage(text) {
+    var lines = escapeHtml(text).split("\n");
+    var parts = [];
+    var listType = null;
+    var listItems = [];
+
+    function flushList() {
+      if (listType) {
+        parts.push("<" + listType + ">" + listItems.join("") + "</" + listType + ">");
+        listType = null;
+        listItems = [];
+      }
+    }
+
+    function inline(line) {
+      return line.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+    }
+
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      var bulletMatch = line.match(/^\s*[*-]\s+(.+)/);
+      var numberedMatch = line.match(/^\s*\d+\.\s+(.+)/);
+
+      if (bulletMatch) {
+        if (listType !== "ul") { flushList(); listType = "ul"; }
+        listItems.push("<li>" + inline(bulletMatch[1]) + "</li>");
+      } else if (numberedMatch) {
+        if (listType !== "ol") { flushList(); listType = "ol"; }
+        listItems.push("<li>" + inline(numberedMatch[1]) + "</li>");
+      } else {
+        flushList();
+        parts.push(inline(line));
+      }
+    }
+    flushList();
+    return parts.join("<br>");
+  }
+
   function addMessage(text, kind) {
     var el = document.createElement("div");
     el.className = "fw-msg " + (kind === "user" ? "fw-msg-user" : kind === "error" ? "fw-msg-error" : "fw-msg-bot");
-    el.textContent = text; // textContent only — never render agent/user text as HTML.
+    if (kind === "bot") {
+      // Only LLM-generated replies get rendered as (escaped, constrained) HTML.
+      el.innerHTML = formatMessage(text);
+    } else {
+      el.textContent = text; // user input and static error strings stay plain text.
+    }
     messages.appendChild(el);
     messages.scrollTop = messages.scrollHeight;
     return el;
