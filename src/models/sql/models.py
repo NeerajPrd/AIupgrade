@@ -1,7 +1,7 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Optional, List, Dict, Any
-from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Integer, JSON, Text, LargeBinary
+from sqlalchemy import Column, String, Boolean, Date, DateTime, ForeignKey, Integer, JSON, Text, LargeBinary
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from pgvector.sqlalchemy import Vector
@@ -71,6 +71,9 @@ class Agent(Base):
     instructions: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     config: Mapped[Dict[str, Any]] = mapped_column(JSONB, default=dict)
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Max new widget/API conversations since chat_cap_starts_at (Asia/Kathmandu). NULL = unlimited.
+    chat_cap: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    chat_cap_starts_at: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
@@ -85,6 +88,8 @@ class AgentChatHistory(Base):
     agent_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("agents.id", ondelete="CASCADE"))
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     title: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    # Origin of the conversation: 'agent_api' (website widget / public API) or NULL.
+    source: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))

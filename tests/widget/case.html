@@ -1,0 +1,212 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>widget case</title></head>
+<body>
+<script>
+/*
+ * One widget test case per page load: ?case=<name>. Mocks fetch / storage, injects
+ * the real frontend/public/widget.js with the case's data attributes, runs the
+ * checks against the widget's shadow DOM, and posts results to the parent harness.
+ */
+(function () {
+  var params = new URLSearchParams(location.search);
+  var caseName = params.get("case");
+  var ENDPOINT = "https://api.test/api/v1/agent-api/demo/chat";
+  var KEY = "fagoon-widget:conversation:" + ENDPOINT;
+  var DAY = 24 * 60 * 60 * 1000;
+  var requests = [];
+  var responses = [];
+  var results = [];
+
+  function check(name, ok, info) { results.push({ name: name, ok: !!ok, info: info === undefined ? "" : String(info) }); }
+  function done() { parent.postMessage({ case: caseName, results: results }, "*"); }
+  function tick(ms) { return new Promise(function (r) { setTimeout(r, ms || 30); }); }
+
+  window.fetch = function (url, opts) {
+    requests.push({ url: url, body: JSON.parse(opts.body), headers: opts.headers });
+    var next = responses.shift() || { status: 200, body: { success: true, conversation_id: "conv-1", response: "ok" } };
+    return Promise.resolve(new Response(JSON.stringify(next.body), { status: next.status, headers: { "Content-Type": "application/json" } }));
+  };
+
+  function inject(attrs) {
+    var s = document.createElement("script");
+    s.src = params.get("widget") || "/frontend/public/widget.js"; // ?widget= lets you test another build
+    s.setAttribute("data-endpoint", ENDPOINT);
+    s.setAttribute("data-api-key", "agapi_test");
+    s.setAttribute("data-agent-name", "Demo");
+    Object.keys(attrs || {}).forEach(function (k) { s.setAttribute(k, attrs[k]); });
+    return new Promise(function (resolve) { s.onload = function () { tick().then(resolve); }; document.body.appendChild(s); });
+  }
+
+  function root() { return document.getElementById("fagoon-widget-host").shadowRoot; }
+  function q(sel) { return root().querySelector(sel); }
+  function open() { q(".fw-bubble").click(); }
+  function messages() { return Array.prototype.slice.call(root().querySelectorAll(".fw-msg")); }
+  function lastMessage() { var m = messages(); return m[m.length - 1]; }
+  function send(text) { q(".fw-input").value = text; q(".fw-send").click(); return tick(60); }
+  function headerBg() { return getComputedStyle(q(".fw-header")).backgroundColor; }
+  function stored() { try { return JSON.parse(localStorage.getItem(KEY)); } catch (e) { return "ERR"; } }
+
+  var cases = {
+    defaults: function () {
+      return inject({}).then(function () {
+        open();
+        check("default colour", headerBg() === "rgb(79, 70, 229)", headerBg());
+        check("no logo", !q(".fw-logo"));
+        check("default welcome", messages()[0].textContent === "Hi! How can I help you today?", messages()[0].textContent);
+      });
+    },
+    brand_and_logo: function () {
+      return inject({ "data-brand-color": "#0a7", "data-logo-url": "https://example.com/logo.png", "data-welcome-message": "Namaste! Ask us about Nepalland." }).then(function () {
+        open();
+        check("brand colour applied", headerBg() === "rgb(0, 170, 119)", headerBg());
+        var img = q(".fw-logo");
+        check("logo rendered", img && img.getAttribute("src") === "https://example.com/logo.png", img && img.src);
+        check("logo alt empty", img && img.alt === "");
+        check("custom welcome", messages()[0].textContent === "Namaste! Ask us about Nepalland.");
+      });
+    },
+    legacy_primary_color: function () {
+      return inject({ "data-primary-color": "#ff0000" }).then(function () {
+        open();
+        check("legacy data-primary-color still works", headerBg() === "rgb(255, 0, 0)", headerBg());
+      });
+    },
+    brand_beats_primary: function () {
+      return inject({ "data-primary-color": "#ff0000", "data-brand-color": "#00ff00" }).then(function () {
+        open();
+        check("data-brand-color wins", headerBg() === "rgb(0, 255, 0)", headerBg());
+      });
+    },
+    invalid_color_injection: function () {
+      return inject({ "data-brand-color": "red;}:host{display:none}", "data-primary-color": "indigo" }).then(function () {
+        open();
+        check("falls back to default", headerBg() === "rgb(79, 70, 229)", headerBg());
+        check("payload not in CSS", root().querySelector("style").textContent.indexOf("display:none}") === -1);
+      });
+    },
+    http_logo_rejected: function () {
+      return inject({ "data-logo-url": "http://example.com/logo.png" }).then(function () {
+        check("http logo ignored", !q(".fw-logo"));
+      });
+    },
+    javascript_logo_rejected: function () {
+      return inject({ "data-logo-url": "javascript:alert(1)" }).then(function () {
+        check("javascript: logo ignored", !q(".fw-logo"));
+      });
+    },
+    welcome_is_plain_text: function () {
+      var payload = '<img src=x onerror="window.__pwned=1"> **bold**';
+      return inject({ "data-welcome-message": payload }).then(function () {
+        open();
+        return tick(80);
+      }).then(function () {
+        var m = messages()[0];
+        check("text shown literally", m.textContent === payload, m.textContent);
+        check("no element injected", m.children.length === 0, m.innerHTML);
+        check("no script ran", !window.__pwned);
+      });
+    },
+    welcome_truncated: function () {
+      var long = new Array(401).join("a");
+      return inject({ "data-welcome-message": long }).then(function () {
+        open();
+        var t = messages()[0].textContent;
+        check("truncated to 300", t.length === 300, t.length);
+        check("ends with ellipsis", t.slice(-1) === "…");
+      });
+    },
+    cap_reached_message: function () {
+      responses.push({ status: 402, body: { detail: { code: "chat_cap_reached", message: "limit" } } });
+      return inject({}).then(function () {
+        open();
+        return send("hello");
+      }).then(function () {
+        check("friendly cap message", lastMessage().textContent === "Our assistant is unavailable right now, please contact us directly.", lastMessage().textContent);
+        check("shown as error", lastMessage().classList.contains("fw-msg-error"));
+        check("nothing stored", stored() === null);
+      });
+    },
+    rate_limit_unchanged: function () {
+      responses.push({ status: 429, body: { detail: "Rate limit exceeded." } });
+      return inject({}).then(function () { open(); return send("hello"); }).then(function () {
+        check("429 message unchanged", lastMessage().textContent.indexOf("too fast") !== -1, lastMessage().textContent);
+      });
+    },
+    conversation_saved: function () {
+      localStorage.removeItem(KEY);
+      var before = Date.now();
+      return inject({}).then(function () { open(); return send("hello"); }).then(function () {
+        var s = stored();
+        check("first request has no conversation_id", !("conversation_id" in requests[0].body));
+        check("id saved", s && s.id === "conv-1", JSON.stringify(s));
+        check("expires in ~24h", s && s.expiresAt >= before + DAY && s.expiresAt <= Date.now() + DAY, s && s.expiresAt - before);
+        return send("again");
+      }).then(function () {
+        check("follow-up sends id", requests[1].body.conversation_id === "conv-1");
+      });
+    },
+    conversation_restored_after_reload: function () {
+      localStorage.setItem(KEY, JSON.stringify({ id: "conv-old", expiresAt: Date.now() + 60000 }));
+      responses.push({ status: 200, body: { success: true, conversation_id: "conv-old", response: "welcome back" } });
+      return inject({}).then(function () { open(); return send("hi again"); }).then(function () {
+        check("restored id sent", requests[0].body.conversation_id === "conv-old", JSON.stringify(requests[0].body));
+        var s = stored();
+        check("expiry not extended", s && s.expiresAt <= Date.now() + 60000, s && s.expiresAt);
+      });
+    },
+    expired_conversation_dropped: function () {
+      localStorage.setItem(KEY, JSON.stringify({ id: "conv-stale", expiresAt: Date.now() - 1 }));
+      return inject({}).then(function () {
+        check("stale entry removed", stored() === null || (stored() && stored().id !== "conv-stale"));
+        open();
+        return send("hi");
+      }).then(function () {
+        check("no stale id sent", !("conversation_id" in requests[0].body), JSON.stringify(requests[0].body));
+      });
+    },
+    corrupt_storage_ignored: function () {
+      localStorage.setItem(KEY, "{not json");
+      return inject({}).then(function () { open(); return send("hi"); }).then(function () {
+        check("works with corrupt entry", !("conversation_id" in requests[0].body));
+        check("reply shown", lastMessage().textContent === "ok");
+      });
+    },
+    conversation_not_found_resets: function () {
+      localStorage.setItem(KEY, JSON.stringify({ id: "conv-gone", expiresAt: Date.now() + 60000 }));
+      responses.push({ status: 404, body: { detail: { code: "conversation_not_found", message: "x" } } });
+      return inject({}).then(function () { open(); return send("hi"); }).then(function () {
+        check("expired message", lastMessage().textContent.indexOf("conversation has expired") !== -1, lastMessage().textContent);
+        check("storage cleared", stored() === null);
+        return send("hi again");
+      }).then(function () {
+        check("next send starts fresh", !("conversation_id" in requests[1].body), JSON.stringify(requests[1].body));
+      });
+    },
+    storage_blocked: function () {
+      var blocked = false;
+      try {
+        Object.defineProperty(window, "localStorage", { configurable: true, get: function () { throw new DOMException("blocked", "SecurityError"); } });
+        try { window.localStorage; } catch (e) { blocked = true; }
+      } catch (e) {}
+      check("precondition: storage access throws", blocked);
+      var errors = [];
+      window.addEventListener("error", function (e) { errors.push(e.message); });
+      return inject({}).then(function () { open(); return send("hi"); }).then(function () {
+        check("reply shown", lastMessage().textContent === "ok", lastMessage().textContent);
+        return send("again");
+      }).then(function () {
+        check("follow-up uses in-memory id", requests[1].body.conversation_id === "conv-1");
+        check("no uncaught errors", errors.length === 0, errors.join("; "));
+      });
+    },
+  };
+
+  if (params.get("list")) { parent.postMessage({ list: Object.keys(cases) }, "*"); return; }
+  if (!cases[caseName]) { check("unknown case", false, caseName); done(); return; }
+  try { localStorage.removeItem(KEY); } catch (e) {}
+  Promise.resolve().then(cases[caseName]).catch(function (e) { check("threw", false, e && e.stack || e); }).then(done);
+})();
+</script>
+</body>
+</html>
