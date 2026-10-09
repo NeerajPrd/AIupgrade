@@ -15,7 +15,8 @@ from src.core.settings import system_setting
 from src.services.agents.llm_tasks import generate_general_response
 
 # Missing imports for tools
-from src.services.query_analyzer import analyze_and_select_tools
+from src.services.query_analyzer import allowed_tools_for_agent, analyze_and_select_tools
+from src.schemas.agent_enums import ToolType
 from src.services.web_search_service import WebSearchService
 from src.services.imagen import ImageGenerationService
 from src.schemas.diffusion import BaseDiffusionConfig
@@ -206,10 +207,18 @@ class ChatOrchestrator:
         temp_history = list(db_history) + [{"role": "user", "content": processed_message}]
 
         agent_tools = (agent.get("tools") if isinstance(agent, dict) else getattr(agent, "tools", None)) or []
-        web_search_enabled = "web_search" in agent_tools or "webSearch" in agent_tools or "websearch" in agent_tools
+        agent_web_search_flag = (agent.get("web_search_enabled") if isinstance(agent, dict) else getattr(agent, "web_search_enabled", False)) is True
+        allowed_tools = allowed_tools_for_agent(agent_tools, web_search_enabled=agent_web_search_flag)
+        web_search_enabled = ToolType.WEB_SEARCH.value in allowed_tools
 
-        selected_tools = await analyze_and_select_tools(temp_history, web_search_enabled=web_search_enabled, user_id=user_id)
+        selected_tools = await analyze_and_select_tools(
+            temp_history, web_search_enabled=web_search_enabled, user_id=user_id, allowed_tools=allowed_tools
+        )
         selected_tool = selected_tools[0] if selected_tools else "rag"
+        # The analyzer is an LLM: never act on a tool this agent doesn't have enabled.
+        if selected_tool not in allowed_tools:
+            logger.warning(f"Query Analyzer picked '{selected_tool}', which is not enabled for agent {agent_id}. Using rag.")
+            selected_tool = "rag"
         logger.info(f"Query Analyzer decided to route to: {selected_tool}")
 
         # 4. Save User Message
