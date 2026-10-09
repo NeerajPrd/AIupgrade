@@ -1,5 +1,5 @@
 import json
-from typing import List, Dict, Optional, Any
+from typing import Iterable, List, Dict, Optional, Any
 
 from loguru import logger
 from src.schemas.agent_enums import (
@@ -11,6 +11,31 @@ from src.schemas.agent_enums import (
 from src.schemas.llm import BaseLLMConfig
 from src.services.llm import LLMService
 from src.utils.misc import get_user_latest_query
+
+
+# Tools that reach outside the agent's own knowledge (or cost money per use): an agent
+# only gets them when they are enabled on it. Every other tool is always available.
+OPT_IN_TOOLS = (ToolType.WEB_SEARCH.value, ToolType.IMAGE_GENERATION.value, ToolType.VIDEO_GENERATION.value)
+
+
+def _normalize_tool_name(name: Any) -> str:
+    # Agents store e.g. "web_search", "webSearch" or "websearch" for the same tool.
+    return str(name).replace("_", "").replace("-", "").lower()
+
+
+def allowed_tools_for_agent(enabled_tools: Optional[Iterable[Any]], web_search_enabled: bool = False) -> List[str]:
+    """Tool names an agent may be routed to, given the tools enabled in its config."""
+    enabled = {_normalize_tool_name(t) for t in (enabled_tools or [])}
+    allowed = []
+    for tool in ToolType:
+        if tool.value in OPT_IN_TOOLS:
+            is_enabled = _normalize_tool_name(tool.value) in enabled or (
+                tool == ToolType.WEB_SEARCH and web_search_enabled
+            )
+            if not is_enabled:
+                continue
+        allowed.append(tool.value)
+    return allowed
 
 
 def _stringify_content(content: Any) -> str:
@@ -31,15 +56,19 @@ def build_prompt(
         query: str,
         history: Optional[List[Dict]] = None,
         web_search_hint: bool = False,
+        allowed_tools: Optional[Iterable[str]] = None,
 ) -> tuple[str, str]:
     """
     Builds the (system_prompt, user_query) for the tool selection LLM.
+    Only tools in `allowed_tools` are offered (None = all tools).
     """
     if template != SystemPrompt.TOOL_SELECTION:
         raise ValueError(f"Unsupported prompt template: {template}")
 
+    allowed = set(allowed_tools) if allowed_tools is not None else {t.value for t in ToolType}
+
     tool_info = "\n".join(
-        f'- "{tool.value}": {desc}' for tool, desc in TOOL_USAGE_GUIDE.items()
+        f'- "{tool.value}": {desc}' for tool, desc in TOOL_USAGE_GUIDE.items() if tool.value in allowed
     )
 
     conversation_history = history or []
@@ -52,26 +81,40 @@ def build_prompt(
     )
 
     system_prompt_template = SYSTEM_PROMPTS[template]
-    
+    if ToolType.WEB_SEARCH.value not in allowed:
+        # The shared template's example names web_search; don't suggest a tool the agent can't use.
+        system_prompt_template = system_prompt_template.replace('["summarization", "web_search"]', '["rag"]')
+
     # --- ADD STRICT ROUTING GUARDRAILS TO BASE PROMPT ---
     routing_guardrails = (
         "\n\nCRITICAL ROUTING RULES FOR GENERAL CHAT AND SYSTEM TASKS:\n"
         "1. If the user is just saying hello, making casual conversation (e.g., 'how are you?', 'tell me a joke', 'what's up'), "
         "you MUST return Only [\"general\"].\n"
         "2. If the user asks for the current time, date, or your name/identity, you MUST return Only [\"general\"]. Do NOT perform a web search.\n"
-        "3. You must ONLY select [\"web_search\"] if the user query explicitly demands live data, fresh news, real-time lookups, or current events information.\n"
-        "4. If the user asks a factual question, inquires about services, products, or company details, or asks something that might be covered by a knowledge base, you MUST return Only [\"rag\"]."
+        + (
+            "3. You must ONLY select [\"web_search\"] if the user query explicitly demands live data, fresh news, real-time lookups, or current events information.\n"
+            if ToolType.WEB_SEARCH.value in allowed
+            else "3. Only select tools from the list above.\n"
+        )
+        + "4. If the user asks a factual question, inquires about services, products, or company details, or asks something that might be covered by a knowledge base, you MUST return Only [\"rag\"]."
     )
     system_prompt_template += routing_guardrails
 
-    generation_hint = (
-        "\nHint: If the query is an explicit command to generate content "
-        "(e.g., 'draw a picture of...', 'generate a video of...', 'create a flowchart for...'), select the corresponding generation "
-        "tool ('image_generation', 'video_generation', 'mermaid_diagram')."
-    )
-    system_prompt_template += generation_hint
+    generation_examples = {
+        ToolType.IMAGE_GENERATION.value: "'draw a picture of...'",
+        ToolType.VIDEO_GENERATION.value: "'generate a video of...'",
+        ToolType.MERMAID_DIAGRAM.value: "'create a flowchart for...'",
+    }
+    offered_generation = [tool for tool in generation_examples if tool in allowed]
+    if offered_generation:
+        generation_hint = (
+            "\nHint: If the query is an explicit command to generate content "
+            f"(e.g., {', '.join(generation_examples[t] for t in offered_generation)}), select the corresponding generation "
+            f"tool ({', '.join(repr(t) for t in offered_generation)})."
+        )
+        system_prompt_template += generation_hint
 
-    if web_search_hint:
+    if web_search_hint and ToolType.WEB_SEARCH.value in allowed:
         web_search_hint_text = (
             "\nHint: The user has explicitly enabled web search. Prioritize the 'web_search' tool for informational "
             "queries that require live, real-time data or lookups."
@@ -89,12 +132,15 @@ async def analyze_and_select_tools(
         history: List[Dict],
         web_search_enabled: bool = False,
         user_id: Optional[str] = None,
+        allowed_tools: Optional[Iterable[str]] = None,
 ) -> List[str]:
     """
     Uses a hybrid approach to intelligently determine which tools to activate.
     - Rule-based checks are used for simple, general queries to bypass the LLM.
     - An LLM is used for all other complex queries.
+    Only tools in `allowed_tools` are offered or returned (None = all tools).
     """
+    allowed = set(allowed_tools) if allowed_tools is not None else {t.value for t in ToolType}
     query = get_user_latest_query(history).lower().strip().rstrip('?')
 
     # Rule 1: Comprehensive check for casual chat, greetings, and system properties
@@ -118,7 +164,7 @@ async def analyze_and_select_tools(
         "generate video", "generate a video", "make a video", "make video", "create a video", "create video",
         "render a video", "render video", "generate some video", "generate an animation", "make an animation"
     ]
-    if any(query.startswith(trigger) for trigger in video_triggers):
+    if ToolType.VIDEO_GENERATION.value in allowed and any(query.startswith(trigger) for trigger in video_triggers):
         logger.info(f"Rule-based tool selection: User message '{query}' is a video generation request. Selecting 'video_generation' tool.")
         return [ToolType.VIDEO_GENERATION.value]
 
@@ -129,13 +175,13 @@ async def analyze_and_select_tools(
         "generate a picture", "generate picture", "paint a picture", "paint picture", "generate a drawing",
         "make a drawing", "draw a", "generate a painting", "make a painting"
     ]
-    if any(query.startswith(trigger) for trigger in image_triggers):
+    if ToolType.IMAGE_GENERATION.value in allowed and any(query.startswith(trigger) for trigger in image_triggers):
         logger.info(f"Rule-based tool selection: User message '{query}' is an image generation request. Selecting 'image_generation' tool.")
         return [ToolType.IMAGE_GENERATION.value]
 
     # --- FIX 1: Protect Rule 2 with the web_search_enabled toggle ---
     # Only allow rule-based web search matching if the feature is explicitly enabled by the user
-    if web_search_enabled:
+    if web_search_enabled and ToolType.WEB_SEARCH.value in allowed:
         web_search_triggers = [
             "who is the", "what is the current", "latest news on", "current price of", 
             "weather in", "what's the score of", "stock price of", "search for", 
@@ -180,6 +226,7 @@ async def analyze_and_select_tools(
             query=query,
             history=history,
             web_search_hint=web_search_enabled,
+            allowed_tools=allowed,
         )
         response = await llm_service.chat_completion(
             user_query=user_query, system_prompt=system_prompt
@@ -194,7 +241,7 @@ async def analyze_and_select_tools(
         if not isinstance(parsed, list):
             raise ValueError("Expected a JSON array from tool selection LLM.")
 
-        valid_tools = [tool for tool in parsed if tool in ToolType._value2member_map_]
+        valid_tools = [tool for tool in parsed if tool in ToolType._value2member_map_ and tool in allowed]
 
         if not valid_tools:
             logger.warning("No valid tools selected, defaulting to RAG.")
