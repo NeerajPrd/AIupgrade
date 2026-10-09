@@ -17,6 +17,12 @@ from src.core.database import get_db
 from src.models.sql.models import Agent
 from src.models.sql.agent_api import AgentAPI
 from src.schemas.common import SuccessResponse, FailureResponse
+from src.services.agents.conversation_usage import (
+    SOURCE_AGENT_API,
+    conversation_belongs_to_agent,
+    count_new_conversations,
+    is_cap_reached,
+)
 
 router = APIRouter()
 
@@ -284,13 +290,35 @@ async def chat_via_agent_api(
     if not agent:
         raise HTTPException(status_code=404, detail="Agent not found")
 
-    # 4. Get or create the conversation thread (owned by the agent's owner)
+    # 4. Continue an existing thread of this agent, or start a new one (owned by the
+    #    agent's owner). Only new threads are subject to the agent's chat cap, so
+    #    conversations already in progress can always finish.
     chat_service = request.app.state.agent_chat_service
     conversation_id = body.conversation_id
-    if not conversation_id:
+    if conversation_id:
+        if not await conversation_belongs_to_agent(db, conversation_id, agent.id):
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "code": "conversation_not_found",
+                    "message": "Conversation not found. Start a new conversation without conversation_id.",
+                },
+            )
+    else:
+        if agent.chat_cap is not None:
+            used = await count_new_conversations(db, agent.id, agent.chat_cap_starts_at)
+            if is_cap_reached(agent.chat_cap, used):
+                raise HTTPException(
+                    status_code=402,
+                    detail={
+                        "code": "chat_cap_reached",
+                        "message": "This assistant has reached its conversation limit. Existing conversations can continue.",
+                    },
+                )
         conversation_id = await chat_service.create_conversation(
             user_id=str(agent.user_id),
             agent_id=str(agent.id),
+            source=SOURCE_AGENT_API,
         )
 
     # 5. Run the chat synchronously (within timeout), accumulating streamed tokens

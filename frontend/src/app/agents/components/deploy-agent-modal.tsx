@@ -28,6 +28,17 @@ import { WhatsAppMethodSelector } from "./whatsapp-method-selector"
 import { WhatsAppDisclaimer } from "./whatsapp-disclaimer"
 import { WhatsAppQRPanel } from "./whatsapp-qr-panel"
 
+// Mirrors the validation in public/widget.js, which falls back to defaults for invalid values.
+const WIDGET_WELCOME_MAX_LENGTH = 300
+const isValidHexColor = (value: string) => /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(value.trim())
+const isValidHttpsUrl = (value: string) => {
+    try {
+        return new URL(value.trim()).protocol === "https:"
+    } catch {
+        return false
+    }
+}
+
 interface DeployAgentModalProps {
     isOpen: boolean
     onClose: () => void
@@ -52,6 +63,9 @@ export function DeployAgentModal({ isOpen, onClose, agentId, agentName }: Deploy
     // API tab states
     const [revealApiKey, setRevealApiKey] = useState(false)
     const [oneTimeApiKey, setOneTimeApiKey] = useState<string | null>(null)
+
+    // Website tab — optional widget customization (only used to build the snippet)
+    const [widgetOptions, setWidgetOptions] = useState({ brandColor: "", logoUrl: "", welcomeMessage: "" })
 
     // Export tab state — defaults to the current month
     const [exportMonth, setExportMonth] = useState(() => new Date().toISOString().slice(0, 7))
@@ -191,12 +205,25 @@ export function DeployAgentModal({ isOpen, onClose, agentId, agentName }: Deploy
         return `${prefix}••••••••••••••••••••••••`
     }
 
-    const escapeHtmlAttr = (value: string) => value.replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+    const escapeHtmlAttr = (value: string) =>
+        value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+    const brandColorInvalid = !!widgetOptions.brandColor.trim() && !isValidHexColor(widgetOptions.brandColor)
+    const logoUrlInvalid = !!widgetOptions.logoUrl.trim() && !isValidHttpsUrl(widgetOptions.logoUrl)
 
     const getWidgetEmbedSnippet = () => {
         if (!apiInfo?.slug) return ''
         const scriptOrigin = typeof window !== 'undefined' ? window.location.origin : ''
         const apiKey = oneTimeApiKey || 'YOUR_API_KEY'
+        const brandColor = widgetOptions.brandColor.trim()
+        const logoUrl = widgetOptions.logoUrl.trim()
+        const welcomeMessage = widgetOptions.welcomeMessage.trim().slice(0, WIDGET_WELCOME_MAX_LENGTH)
+        // Optional attributes are only emitted when set and valid.
+        const optional = [
+            isValidHexColor(brandColor) ? `  data-brand-color="${brandColor}"` : null,
+            isValidHttpsUrl(logoUrl) ? `  data-logo-url="${escapeHtmlAttr(logoUrl)}"` : null,
+            welcomeMessage ? `  data-welcome-message="${escapeHtmlAttr(welcomeMessage)}"` : null,
+        ].filter((line): line is string => line !== null)
         return [
             '<script',
             `  src="${scriptOrigin}/widget.js"`,
@@ -204,6 +231,7 @@ export function DeployAgentModal({ isOpen, onClose, agentId, agentName }: Deploy
             `  data-agent-slug="${apiInfo.slug}"`,
             `  data-api-key="${apiKey}"`,
             `  data-agent-name="${escapeHtmlAttr(agentName)}"`,
+            ...optional,
             '  async',
             '></script>',
         ].join('\n')
@@ -493,6 +521,69 @@ export function DeployAgentModal({ isOpen, onClose, agentId, agentName }: Deploy
                                                 </AlertDescription>
                                             </Alert>
                                         )}
+
+                                        <div className="space-y-3 rounded-xl border p-3">
+                                            <div>
+                                                <p className="text-sm font-medium">Customize (optional)</p>
+                                                <p className="text-[11px] text-muted-foreground">Leave a field empty to use the default. Invalid values are left out of the snippet.</p>
+                                            </div>
+
+                                            <div className="space-y-1">
+                                                <Label htmlFor="widget-brand-color" className="text-xs text-muted-foreground">Brand colour (hex)</Label>
+                                                <div className="flex gap-2">
+                                                    <input
+                                                        type="color"
+                                                        aria-label="Pick brand colour"
+                                                        value={/^#[0-9a-fA-F]{6}$/.test(widgetOptions.brandColor.trim()) ? widgetOptions.brandColor.trim() : "#4f46e5"}
+                                                        onChange={(e) => setWidgetOptions((o) => ({ ...o, brandColor: e.target.value }))}
+                                                        className="h-9 w-12 shrink-0 cursor-pointer rounded-md border bg-background p-1"
+                                                    />
+                                                    <Input
+                                                        id="widget-brand-color"
+                                                        placeholder="#4f46e5"
+                                                        value={widgetOptions.brandColor}
+                                                        onChange={(e) => setWidgetOptions((o) => ({ ...o, brandColor: e.target.value }))}
+                                                        className="font-mono text-xs"
+                                                        aria-invalid={brandColorInvalid}
+                                                    />
+                                                </div>
+                                                {brandColorInvalid && (
+                                                    <p className="text-[11px] text-destructive">Use a hex colour like #1a73e8 or #1af.</p>
+                                                )}
+                                            </div>
+
+                                            <div className="space-y-1">
+                                                <Label htmlFor="widget-logo-url" className="text-xs text-muted-foreground">Logo URL</Label>
+                                                <Input
+                                                    id="widget-logo-url"
+                                                    type="url"
+                                                    placeholder="https://example.com/logo.png"
+                                                    value={widgetOptions.logoUrl}
+                                                    onChange={(e) => setWidgetOptions((o) => ({ ...o, logoUrl: e.target.value }))}
+                                                    className="text-xs"
+                                                    aria-invalid={logoUrlInvalid}
+                                                />
+                                                {logoUrlInvalid && (
+                                                    <p className="text-[11px] text-destructive">Only https:// image links are allowed.</p>
+                                                )}
+                                            </div>
+
+                                            <div className="space-y-1">
+                                                <Label htmlFor="widget-welcome-message" className="text-xs text-muted-foreground">Welcome message</Label>
+                                                <Textarea
+                                                    id="widget-welcome-message"
+                                                    placeholder="Hi! How can I help you today?"
+                                                    value={widgetOptions.welcomeMessage}
+                                                    maxLength={WIDGET_WELCOME_MAX_LENGTH}
+                                                    rows={2}
+                                                    onChange={(e) => setWidgetOptions((o) => ({ ...o, welcomeMessage: e.target.value }))}
+                                                    className="text-xs resize-none"
+                                                />
+                                                <p className="text-[11px] text-muted-foreground text-right">
+                                                    {widgetOptions.welcomeMessage.length}/{WIDGET_WELCOME_MAX_LENGTH} · shown as plain text
+                                                </p>
+                                            </div>
+                                        </div>
 
                                         <div className="space-y-1">
                                             <Label className="text-xs text-muted-foreground">Embed Snippet</Label>

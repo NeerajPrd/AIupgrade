@@ -12,7 +12,9 @@ class AgentChatService:
         self.postgres_manager = postgres_manager
         logger.info("AgentChatService initialized with PostgreSQL.")
 
-    async def create_conversation(self, user_id: str, agent_id: str, title: Optional[str] = None) -> str:
+    async def create_conversation(
+        self, user_id: str, agent_id: str, title: Optional[str] = None, source: Optional[str] = None
+    ) -> str:
         async with self.postgres_manager.get_session() as session:
             pg_services = PostgresServices(session)
             history_dict = {
@@ -20,6 +22,7 @@ class AgentChatService:
                 "user_id": uuid.UUID(user_id),
                 "agent_id": uuid.UUID(agent_id),
                 "title": title or "New Conversation",
+                "source": source,
                 "created_at": datetime.now(timezone.utc),
                 "updated_at": datetime.now(timezone.utc)
             }

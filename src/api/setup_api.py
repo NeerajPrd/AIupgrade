@@ -38,6 +38,7 @@ from src.api.v1.routers.video_gen.video_gen_routes import router as video_gen_ro
 from src.api.v1.routers.authentication import auth_router, user_router
 from src.api.v1.routers.whatsapp import whatsapp_router
 from src.api.v1.routers.database import db_switch
+from src.api.v1.routers.admin import agent_usage as admin_agent_usage
 
 
 def setup_and_combine_all_routers() -> APIRouter:
@@ -192,5 +193,7 @@ def setup_and_combine_all_routers() -> APIRouter:
     router.include_router(discovery.router, prefix="/discovery", tags=["Discovery"])
     router.include_router(workflow_api.router, tags=["Workflow API"])
     router.include_router(agent_api.router, tags=["Agent API"])
+    # Admin-only conversation usage / chat caps (Nepalland pilot)
+    router.include_router(admin_agent_usage.router)
 
     return router

@@ -1,0 +1,78 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Widget Test Harness</title>
+<style>
+  body { font: 14px system-ui, sans-serif; margin: 16px; background: #fff; color: #111; }
+  .pass { color: #116329; } .fail { color: #b42318; font-weight: 600; }
+  iframe { display: none; }
+  #summary { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+<!--
+  Manual/automated harness for frontend/public/widget.js. Serve the repo root over
+  http (e.g. `python -m http.server 8765` from the project root) and open
+  http://127.0.0.1:8765/tests/widget/harness.html. Each case runs in its own iframe
+  so storage and DOM state don't leak between cases.
+-->
+<div id="summary">Running…</div>
+<ul id="out"></ul>
+<script>
+(function () {
+  var out = document.getElementById("out");
+  var summary = document.getElementById("summary");
+  var pass = 0, fail = 0;
+
+  function frame(src) { var f = document.createElement("iframe"); f.src = src; document.body.appendChild(f); return f; }
+
+  window.addEventListener("message", function onList(e) {
+    if (!e.data || !e.data.list) return;
+    window.removeEventListener("message", onList);
+    run(e.data.list);
+  });
+  frame("case.html?list=1");
+
+  function run(names) {
+    var i = 0;
+    function next() {
+      if (i >= names.length) {
+        summary.textContent = (fail ? "FAILED" : "ALL PASSED") + " — " + pass + " passed, " + fail + " failed";
+        summary.className = fail ? "fail" : "pass";
+        document.title = summary.textContent;
+        return;
+      }
+      var name = names[i++];
+      var widget = new URLSearchParams(location.search).get("widget");
+      var f = frame("case.html?case=" + encodeURIComponent(name) + (widget ? "&widget=" + encodeURIComponent(widget) : ""));
+      var timer = setTimeout(function () { report(name, [{ name: "timed out", ok: false, info: "" }]); }, 5000);
+      function onMsg(e) {
+        if (!e.data || e.data.case !== name) return;
+        clearTimeout(timer);
+        report(name, e.data.results);
+      }
+      var reported = false;
+      function report(n, results) {
+        if (reported) return;
+        reported = true;
+        clearTimeout(timer);
+        window.removeEventListener("message", onMsg);
+        f.remove();
+        results.forEach(function (r) {
+          r.ok ? pass++ : fail++;
+          var li = document.createElement("li");
+          li.className = r.ok ? "pass" : "fail";
+          li.textContent = (r.ok ? "PASS " : "FAIL ") + n + " :: " + r.name + (r.ok || !r.info ? "" : "  (" + r.info + ")");
+          out.appendChild(li);
+        });
+        next();
+      }
+      window.addEventListener("message", onMsg);
+    }
+    next();
+  }
+})();
+</script>
+</body>
+</html>

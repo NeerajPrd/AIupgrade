@@ -14,7 +14,15 @@
  * Or point straight at the endpoint instead of base+slug:
  *     data-endpoint="https://your-fagoon-host/api/v1/agent-api/my-agent-slug/chat"
  *
- * Optional: data-welcome-message, data-primary-color, data-position ("bottom-right" | "bottom-left").
+ * Optional (invalid values fall back to safe defaults):
+ *   data-brand-color      hex colour, "#rgb" or "#rrggbb" (data-primary-color is the legacy alias)
+ *   data-logo-url         https:// image shown in the header
+ *   data-welcome-message  plain text, max 300 characters
+ *   data-position         "bottom-right" | "bottom-left"
+ *
+ * The conversation id is kept in localStorage for 24 hours from when the
+ * conversation started, so a page reload continues the same conversation.
+ * If storage is blocked the widget still works, just without that memory.
  */
 (function () {
   "use strict";
@@ -40,9 +48,44 @@
     (cfg.apiBase && cfg.agentSlug
       ? cfg.apiBase.replace(/\/$/, "") + "/api/v1/agent-api/" + cfg.agentSlug + "/chat"
       : "");
+  var DEFAULT_COLOR = "#4f46e5";
+  var DEFAULT_WELCOME_MESSAGE = "Hi! How can I help you today?";
+  var WELCOME_MAX_LENGTH = 300;
+
+  // Only "#rgb" / "#rrggbb" — the value is interpolated into CSS, so nothing else is allowed through.
+  function sanitizeColor(value) {
+    var v = typeof value === "string" ? value.trim() : "";
+    return /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v) ? v : "";
+  }
+
+  function sanitizeHttpsUrl(value) {
+    if (typeof value !== "string" || !value.trim()) return "";
+    try {
+      var url = new URL(value.trim());
+      return url.protocol === "https:" ? url.href : "";
+    } catch (e) {
+      return "";
+    }
+  }
+
+  // Plain text only (always inserted with textContent). Strips control characters
+  // other than newlines and truncates to WELCOME_MAX_LENGTH characters.
+  function sanitizeText(value, maxLength) {
+    if (typeof value !== "string") return "";
+    var v = value.replace(/\r\n?/g, "\n").replace(/[\u0000-\u0009\u000B-\u001F\u007F]/g, "").trim();
+    if (v.length > maxLength) {
+      var cut = maxLength - 1;
+      var code = v.charCodeAt(cut - 1);
+      if (code >= 0xd800 && code <= 0xdbff) cut--; // don't split a surrogate pair (emoji)
+      v = v.slice(0, cut) + "…";
+    }
+    return v;
+  }
+
   var AGENT_NAME = cfg.agentName || "Chat";
-  var WELCOME_MESSAGE = cfg.welcomeMessage || "Hi! How can I help you today?";
-  var PRIMARY_COLOR = cfg.primaryColor || "#4f46e5";
+  var WELCOME_MESSAGE = sanitizeText(cfg.welcomeMessage, WELCOME_MAX_LENGTH) || DEFAULT_WELCOME_MESSAGE;
+  var PRIMARY_COLOR = sanitizeColor(cfg.brandColor) || sanitizeColor(cfg.primaryColor) || DEFAULT_COLOR;
+  var LOGO_URL = sanitizeHttpsUrl(cfg.logoUrl);
   var POSITION = cfg.position === "bottom-left" ? "bottom-left" : "bottom-right";
   var REQUEST_TIMEOUT_MS = 60000;
 
@@ -65,9 +108,52 @@
   var NETWORK_ERROR_MESSAGE = "Couldn't reach the chat service. Please check your connection and try again.";
   var TIMEOUT_ERROR_MESSAGE = "That request took too long and was cancelled. Please try again.";
   var CONFIG_ERROR_MESSAGE = "This chat widget isn't configured correctly. Please contact the site owner.";
+  var CAP_REACHED_MESSAGE = "Our assistant is unavailable right now, please contact us directly.";
+  var CONVERSATION_EXPIRED_MESSAGE = "This conversation has expired. Please send your message again to start a new one.";
 
-  // In-memory only — resets whenever the page reloads, never persisted to storage.
-  var conversationId = null;
+  // Conversation id survives page reloads for 24h from when the conversation started.
+  // Every storage access is guarded: localStorage can be missing or throw (private
+  // mode, blocked third-party storage, sandboxed iframes) and the widget must still work.
+  var CONVERSATION_TTL_MS = 24 * 60 * 60 * 1000;
+  var STORAGE_KEY = "fagoon-widget:conversation:" + ENDPOINT;
+
+  function getStorage() {
+    try {
+      return window.localStorage || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function loadConversationId() {
+    try {
+      var storage = getStorage();
+      if (!storage) return null;
+      var saved = JSON.parse(storage.getItem(STORAGE_KEY) || "null");
+      if (saved && typeof saved.id === "string" && typeof saved.expiresAt === "number" && saved.expiresAt > Date.now()) {
+        return saved.id;
+      }
+      storage.removeItem(STORAGE_KEY);
+    } catch (e) {}
+    return null;
+  }
+
+  function saveConversationId(id) {
+    try {
+      var storage = getStorage();
+      if (storage) storage.setItem(STORAGE_KEY, JSON.stringify({ id: id, expiresAt: Date.now() + CONVERSATION_TTL_MS }));
+    } catch (e) {}
+  }
+
+  function clearConversationId() {
+    conversationId = null;
+    try {
+      var storage = getStorage();
+      if (storage) storage.removeItem(STORAGE_KEY);
+    } catch (e) {}
+  }
+
+  var conversationId = ENDPOINT ? loadConversationId() : null;
   var inFlight = false;
 
   var host = document.createElement("div");
@@ -85,7 +171,9 @@
     ".fw-panel{position:absolute;bottom:74px;" + (POSITION === "bottom-left" ? "left:0" : "right:0") + ";width:340px;max-width:calc(100vw - 40px);height:480px;max-height:calc(100vh - 120px);background:#fff;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.2);display:none;flex-direction:column;overflow:hidden}" +
     ".fw-panel.fw-open{display:flex}" +
     ".fw-header{background:" + PRIMARY_COLOR + ";color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;flex:0 0 auto}" +
-    ".fw-header-title{font-weight:600;font-size:15px}" +
+    ".fw-header-brand{display:flex;align-items:center;gap:8px;min-width:0}" +
+    ".fw-logo{width:24px;height:24px;border-radius:4px;object-fit:contain;background:#fff;flex:0 0 auto}" +
+    ".fw-header-title{font-weight:600;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}" +
     ".fw-close{background:none;border:none;color:#fff;cursor:pointer;font-size:20px;line-height:1;padding:4px;opacity:.9}" +
     ".fw-close:hover{opacity:1}" +
     ".fw-messages{flex:1 1 auto;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:#f7f7f8}" +
@@ -125,12 +213,26 @@
   var headerTitle = document.createElement("div");
   headerTitle.className = "fw-header-title";
   headerTitle.textContent = AGENT_NAME;
+  var headerBrand = document.createElement("div");
+  headerBrand.className = "fw-header-brand";
+  if (LOGO_URL) {
+    var logo = document.createElement("img");
+    logo.className = "fw-logo";
+    logo.alt = "";
+    logo.referrerPolicy = "no-referrer";
+    logo.addEventListener("error", function () {
+      logo.remove();
+    });
+    logo.src = LOGO_URL;
+    headerBrand.appendChild(logo);
+  }
+  headerBrand.appendChild(headerTitle);
   var closeBtn = document.createElement("button");
   closeBtn.className = "fw-close";
   closeBtn.type = "button";
   closeBtn.setAttribute("aria-label", "Close chat");
   closeBtn.textContent = "×";
-  header.appendChild(headerTitle);
+  header.appendChild(headerBrand);
   header.appendChild(closeBtn);
 
   var messages = document.createElement("div");
@@ -210,10 +312,12 @@
     return parts.join("<br>");
   }
 
-  function addMessage(text, kind) {
+  // plainText forces textContent even for bot-styled messages (used for the
+  // site-supplied welcome message, which is never rendered as HTML).
+  function addMessage(text, kind, plainText) {
     var el = document.createElement("div");
     el.className = "fw-msg " + (kind === "user" ? "fw-msg-user" : kind === "error" ? "fw-msg-error" : "fw-msg-bot");
-    if (kind === "bot") {
+    if (kind === "bot" && !plainText) {
       // Only LLM-generated replies get rendered as (escaped, constrained) HTML.
       el.innerHTML = formatMessage(text);
     } else {
@@ -239,7 +343,9 @@
     input.disabled = busy;
   }
 
-  function friendlyErrorFor(response) {
+  function friendlyErrorFor(response, code) {
+    if (code === "chat_cap_reached" || response.status === 402) return CAP_REACHED_MESSAGE;
+    if (code === "conversation_not_found") return CONVERSATION_EXPIRED_MESSAGE;
     if (ERROR_MESSAGES[response.status]) {
       var msg = ERROR_MESSAGES[response.status];
       if (response.status === 429) {
@@ -285,7 +391,16 @@
       .then(function (response) {
         if (timeoutId) clearTimeout(timeoutId);
         if (!response.ok) {
-          throw { kind: "http", response: response };
+          // Structured errors carry {"detail": {"code": "..."}}; anything else has no code.
+          return response
+            .json()
+            .catch(function () {
+              return null;
+            })
+            .then(function (payload) {
+              var detail = payload && payload.detail;
+              throw { kind: "http", response: response, code: detail && typeof detail === "object" ? detail.code : null };
+            });
         }
         return response.json().catch(function () {
           throw { kind: "parse" };
@@ -293,7 +408,10 @@
       })
       .then(function (data) {
         typingEl.remove();
-        if (data && data.conversation_id) conversationId = data.conversation_id;
+        if (data && data.conversation_id && data.conversation_id !== conversationId) {
+          conversationId = data.conversation_id;
+          saveConversationId(conversationId);
+        }
         addMessage((data && data.response) || "", "bot");
       })
       .catch(function (err) {
@@ -301,7 +419,8 @@
         if (err && err.name === "AbortError") {
           addMessage(TIMEOUT_ERROR_MESSAGE, "error");
         } else if (err && err.kind === "http") {
-          addMessage(friendlyErrorFor(err.response), "error");
+          if (err.code === "conversation_not_found") clearConversationId();
+          addMessage(friendlyErrorFor(err.response, err.code), "error");
         } else if (err && err.kind === "parse") {
           addMessage(DEFAULT_ERROR_MESSAGE, "error");
         } else {
@@ -341,7 +460,8 @@
     panel.classList.add("fw-open");
     bubble.setAttribute("aria-label", "Close chat");
     if (!messages.childElementCount) {
-      addMessage(configError ? CONFIG_ERROR_MESSAGE : WELCOME_MESSAGE, configError ? "error" : "bot");
+      if (configError) addMessage(CONFIG_ERROR_MESSAGE, "error");
+      else addMessage(WELCOME_MESSAGE, "bot", true);
     }
     input.focus();
   }
