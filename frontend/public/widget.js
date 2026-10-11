@@ -19,6 +19,9 @@
  *   data-logo-url         https:// image shown in the header
  *   data-welcome-message  plain text, max 300 characters
  *   data-position         "bottom-right" | "bottom-left"
+ *   data-launcher-image-url  https:// image (e.g. transparent PNG) shown as-is as the chat
+ *                         launcher instead of the round icon; falls back to the icon if it fails to load
+ *   data-launcher-width   launcher image width in px, default 130, clamped 80-200 (max 130 on phones)
  *
  * The conversation id is kept in localStorage for 24 hours from when the
  * conversation started, so a page reload continues the same conversation.
@@ -82,10 +85,19 @@
     return v;
   }
 
+  // Whole pixels ("150" or "150px"), clamped to 80-200; anything else gives the 130px default.
+  function parseLauncherWidth(value) {
+    var match = typeof value === "string" ? /^\s*(\d+)\s*(?:px)?\s*$/i.exec(value) : null;
+    if (!match) return 130;
+    return Math.min(200, Math.max(80, parseInt(match[1], 10)));
+  }
+
   var AGENT_NAME = cfg.agentName || "Chat";
   var WELCOME_MESSAGE = sanitizeText(cfg.welcomeMessage, WELCOME_MAX_LENGTH) || DEFAULT_WELCOME_MESSAGE;
   var PRIMARY_COLOR = sanitizeColor(cfg.brandColor) || sanitizeColor(cfg.primaryColor) || DEFAULT_COLOR;
   var LOGO_URL = sanitizeHttpsUrl(cfg.logoUrl);
+  var LAUNCHER_IMAGE_URL = sanitizeHttpsUrl(cfg.launcherImageUrl);
+  var LAUNCHER_WIDTH = parseLauncherWidth(cfg.launcherWidth);
   var POSITION = cfg.position === "bottom-left" ? "bottom-left" : "bottom-right";
   var REQUEST_TIMEOUT_MS = 60000;
 
@@ -192,7 +204,16 @@
     ".fw-input:focus{border-color:" + PRIMARY_COLOR + "}" +
     ".fw-send{background:" + PRIMARY_COLOR + ";border:none;color:#fff;border-radius:10px;width:38px;height:38px;flex:0 0 auto;cursor:pointer;display:flex;align-items:center;justify-content:center}" +
     ".fw-send:disabled{opacity:.5;cursor:not-allowed}" +
-    ".fw-send svg{width:17px;height:17px}";
+    ".fw-send svg{width:17px;height:17px}" +
+    (LAUNCHER_IMAGE_URL
+      ? // Image launcher: the client's image as-is — no circle, background or shadow.
+        ".fw-bubble.fw-launcher-image{width:var(--fw-launcher-width);height:auto;padding:0;border-radius:0;background:transparent;box-shadow:none;display:block;line-height:0;transition:transform .15s ease}" +
+        ".fw-bubble.fw-launcher-image:hover{transform:scale(1.04)}" +
+        ".fw-bubble.fw-launcher-image:focus-visible{outline:2px solid " + PRIMARY_COLOR + ";outline-offset:3px}" +
+        ".fw-launcher-img{display:block;width:100%;height:auto}" +
+        "@media (max-width:480px){.fw-bubble.fw-launcher-image{max-width:130px}}" +
+        "@media (prefers-reduced-motion:reduce){.fw-bubble.fw-launcher-image{transition:none}.fw-bubble.fw-launcher-image:hover{transform:none}}"
+      : "");
   shadow.appendChild(style);
 
   var root = document.createElement("div");
@@ -202,8 +223,9 @@
   bubble.className = "fw-bubble";
   bubble.setAttribute("aria-label", "Open chat");
   bubble.type = "button";
-  bubble.innerHTML =
+  var LAUNCHER_ICON_SVG =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>';
+  bubble.innerHTML = LAUNCHER_ICON_SVG;
 
   var panel = document.createElement("div");
   panel.className = "fw-panel";
@@ -256,6 +278,48 @@
   panel.appendChild(header);
   panel.appendChild(messages);
   panel.appendChild(inputRow);
+
+  // Optional image launcher. Stays the same <button> (focus, aria-label, click
+  // handling), only its contents and styling change.
+  var imageLauncher = false;
+
+  // The panel normally sits 74px up (60px icon + 14px gap). An image launcher is
+  // usually taller, so lift the panel above it instead of letting it cover the image.
+  function positionPanel() {
+    if (imageLauncher) {
+      var launcherHeight = bubble.offsetHeight;
+      panel.style.bottom = launcherHeight + 14 + "px";
+      panel.style.maxHeight = "calc(100vh - " + (launcherHeight + 60) + "px)";
+    } else {
+      panel.style.bottom = "";
+      panel.style.maxHeight = "";
+    }
+  }
+
+  function useIconLauncher() {
+    imageLauncher = false;
+    bubble.classList.remove("fw-launcher-image");
+    bubble.style.removeProperty("--fw-launcher-width");
+    bubble.innerHTML = LAUNCHER_ICON_SVG;
+    positionPanel();
+  }
+
+  if (LAUNCHER_IMAGE_URL) {
+    imageLauncher = true;
+    bubble.classList.add("fw-launcher-image");
+    bubble.style.setProperty("--fw-launcher-width", LAUNCHER_WIDTH + "px");
+    bubble.textContent = "";
+    var launcherImg = document.createElement("img");
+    launcherImg.className = "fw-launcher-img";
+    launcherImg.alt = AGENT_NAME;
+    launcherImg.draggable = false;
+    launcherImg.referrerPolicy = "no-referrer";
+    launcherImg.addEventListener("load", positionPanel);
+    launcherImg.addEventListener("error", useIconLauncher);
+    launcherImg.src = LAUNCHER_IMAGE_URL;
+    bubble.appendChild(launcherImg);
+    window.addEventListener("resize", positionPanel);
+  }
 
   root.appendChild(panel);
   root.appendChild(bubble);
@@ -457,6 +521,7 @@
   var opened = false;
   function openPanel() {
     opened = true;
+    positionPanel();
     panel.classList.add("fw-open");
     bubble.setAttribute("aria-label", "Close chat");
     if (!messages.childElementCount) {

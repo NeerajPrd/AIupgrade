@@ -6,7 +6,9 @@
 <style>
   body { font: 14px system-ui, sans-serif; margin: 16px; background: #fff; color: #111; }
   .pass { color: #116329; } .fail { color: #b42318; font-weight: 600; }
-  iframe { display: none; }
+  /* Off-screen but rendered, so cases can measure real layout. */
+  iframe { position: absolute; left: -10000px; top: 0; width: 800px; height: 700px; border: 0; }
+  iframe.phone { width: 360px; }
   #summary { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
 </style>
 </head>
@@ -46,6 +48,7 @@
       var name = names[i++];
       var widget = new URLSearchParams(location.search).get("widget");
       var f = frame("case.html?case=" + encodeURIComponent(name) + (widget ? "&widget=" + encodeURIComponent(widget) : ""));
+      if (/phone/.test(name)) f.className = "phone"; // 360px-wide viewport for narrow-screen cases
       var timer = setTimeout(function () { report(name, [{ name: "timed out", ok: false, info: "" }]); }, 5000);
       function onMsg(e) {
         if (!e.data || e.data.case !== name) return;

@@ -47,6 +47,40 @@
   function headerBg() { return getComputedStyle(q(".fw-header")).backgroundColor; }
   function stored() { try { return JSON.parse(localStorage.getItem(KEY)); } catch (e) { return "ERR"; } }
 
+  // Image-launcher cases: no network and no image files. The widget still sets the
+  // https URL; we record it and load a transparent PNG drawn on a canvas instead
+  // (or deliberately broken data for the fallback case).
+  var LAUNCHER_URL = "https://cdn.example.com/launcher.png";
+  var BROKEN_IMAGE = "data:image/png;base64,bm90IGFuIGltYWdl";
+  var requestedImages = [];
+  function generatedLauncherPng() {
+    var c = document.createElement("canvas");
+    c.width = 130; c.height = 160; // transparent background
+    var g = c.getContext("2d");
+    g.fillStyle = "#0a7"; g.beginPath(); g.arc(65, 70, 50, 0, Math.PI * 2); g.fill();
+    g.fillRect(40, 120, 50, 30);
+    return c.toDataURL("image/png");
+  }
+  function interceptImages(replacement, url) {
+    url = url || LAUNCHER_URL;
+    var desc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
+    Object.defineProperty(HTMLImageElement.prototype, "src", {
+      configurable: true,
+      get: function () { return desc.get.call(this); },
+      set: function (v) {
+        requestedImages.push(v);
+        desc.set.call(this, v === url ? replacement : v);
+      },
+    });
+  }
+  function bubbleStyle() { return getComputedStyle(q(".fw-bubble")); }
+  function width(attr) {
+    interceptImages(generatedLauncherPng());
+    var attrs = { "data-launcher-image-url": LAUNCHER_URL };
+    if (attr !== undefined) attrs["data-launcher-width"] = attr;
+    return inject(attrs).then(function () { return tick(120); }).then(function () { return bubbleStyle().width; });
+  }
+
   var cases = {
     defaults: function () {
       return inject({}).then(function () {
@@ -57,11 +91,12 @@
       });
     },
     brand_and_logo: function () {
+      interceptImages(generatedLauncherPng(), "https://example.com/logo.png"); // no network: logo must stay rendered
       return inject({ "data-brand-color": "#0a7", "data-logo-url": "https://example.com/logo.png", "data-welcome-message": "Namaste! Ask us about Nepalland." }).then(function () {
         open();
         check("brand colour applied", headerBg() === "rgb(0, 170, 119)", headerBg());
         var img = q(".fw-logo");
-        check("logo rendered", img && img.getAttribute("src") === "https://example.com/logo.png", img && img.src);
+        check("logo rendered", img && requestedImages.indexOf("https://example.com/logo.png") !== -1, img && requestedImages.join(","));
         check("logo alt empty", img && img.alt === "");
         check("custom welcome", messages()[0].textContent === "Namaste! Ask us about Nepalland.");
       });
@@ -181,6 +216,104 @@
         return send("hi again");
       }).then(function () {
         check("next send starts fresh", !("conversation_id" in requests[1].body), JSON.stringify(requests[1].body));
+      });
+    },
+    launcher_not_set: function () {
+      return inject({}).then(function () {
+        var b = q(".fw-bubble");
+        check("round icon launcher", b.querySelector("svg") && !b.querySelector("img"));
+        check("no image class", !b.classList.contains("fw-launcher-image"));
+        check("60px circle", bubbleStyle().width === "60px" && bubbleStyle().borderRadius === "50%", bubbleStyle().width + " " + bubbleStyle().borderRadius);
+        check("no launcher-image CSS added", root().querySelector("style").textContent.indexOf("fw-launcher-image") === -1);
+        open();
+        check("panel at the usual 74px", getComputedStyle(q(".fw-panel")).bottom === "74px" && q(".fw-panel").style.bottom === "", getComputedStyle(q(".fw-panel")).bottom);
+      });
+    },
+    launcher_image: function () {
+      interceptImages(generatedLauncherPng());
+      return inject({ "data-launcher-image-url": LAUNCHER_URL }).then(function () { return tick(120); }).then(function () {
+        var b = q(".fw-bubble");
+        var img = b.querySelector("img");
+        var st = bubbleStyle();
+        check("still a <button type=button>", b.tagName === "BUTTON" && b.type === "button");
+        check("image shown, icon removed", img && !b.querySelector("svg"));
+        check("requested the https URL", requestedImages.indexOf(LAUNCHER_URL) !== -1, requestedImages.join(","));
+        check("image loaded", img && img.complete && img.naturalWidth === 130, img && img.naturalWidth);
+        check("alt text is agent name", img && img.alt === "Demo", img && img.alt);
+        check("aria-label Open chat", b.getAttribute("aria-label") === "Open chat");
+        check("default width 130px", st.width === "130px", st.width);
+        check("no circle crop", st.borderRadius === "0px", st.borderRadius);
+        check("no background", st.backgroundColor === "rgba(0, 0, 0, 0)", st.backgroundColor);
+        check("no box shadow", st.boxShadow === "none", st.boxShadow);
+        check("bottom-right position", getComputedStyle(q(".fw-root")).right === "20px" && getComputedStyle(q(".fw-root")).bottom === "20px");
+        b.focus();
+        check("keyboard focusable", root().activeElement === b && b.tabIndex === 0);
+
+        b.click();
+        var panel = q(".fw-panel");
+        check("click opens chat", panel.classList.contains("fw-open"));
+        check("aria-label becomes Close chat", b.getAttribute("aria-label") === "Close chat");
+        check("welcome message shown", messages().length === 1 && messages()[0].textContent === "Hi! How can I help you today?");
+        check("input focused on open", root().activeElement === q(".fw-input"));
+        var pr = panel.getBoundingClientRect(), br = b.getBoundingClientRect();
+        check("chat window sits above the image", pr.bottom <= br.top + 0.5, "panel bottom " + pr.bottom + " / image top " + br.top);
+        b.click();
+        check("click closes chat", !panel.classList.contains("fw-open") && b.getAttribute("aria-label") === "Open chat");
+      });
+    },
+    launcher_hover_and_reduced_motion: function () {
+      interceptImages(generatedLauncherPng());
+      return inject({ "data-launcher-image-url": LAUNCHER_URL }).then(function () {
+        var css = root().querySelector("style").textContent;
+        check("gentle hover", css.indexOf(".fw-bubble.fw-launcher-image:hover{transform:scale(1.04)}") !== -1);
+        check("hover off for reduced motion", /@media \(prefers-reduced-motion:reduce\)\{[^@]*fw-launcher-image\{transition:none\}[^@]*:hover\{transform:none\}/.test(css));
+        check("visible focus ring", css.indexOf(".fw-bubble.fw-launcher-image:focus-visible{outline:2px solid") !== -1);
+      });
+    },
+    launcher_width_clamp_high: function () {
+      return width("500").then(function (w) { check("500 clamped to 200px", w === "200px", w); });
+    },
+    launcher_width_clamp_low: function () {
+      return width("20").then(function (w) { check("20 clamped to 80px", w === "80px", w); });
+    },
+    launcher_width_px_suffix: function () {
+      return width("150px").then(function (w) { check("150px accepted", w === "150px", w); });
+    },
+    launcher_width_invalid: function () {
+      return width("big;}*{display:none").then(function (w) { check("invalid falls back to 130px", w === "130px", w); });
+    },
+    launcher_phone_width: function () {
+      return width("200").then(function (w) {
+        check("precondition: narrow viewport", window.innerWidth <= 480, window.innerWidth);
+        check("capped at 130px on phones", w === "130px", w);
+      });
+    },
+    launcher_phone_width_small: function () {
+      return width("100").then(function (w) {
+        check("precondition: narrow viewport", window.innerWidth <= 480, window.innerWidth);
+        check("widths under the cap unchanged on phones", w === "100px", w);
+      });
+    },
+    launcher_fallback_on_error: function () {
+      interceptImages(BROKEN_IMAGE);
+      return inject({ "data-launcher-image-url": LAUNCHER_URL }).then(function () { return tick(150); }).then(function () {
+        var b = q(".fw-bubble");
+        check("requested the https URL", requestedImages.indexOf(LAUNCHER_URL) !== -1);
+        check("falls back to icon", b.querySelector("svg") && !b.querySelector("img"));
+        check("image class removed", !b.classList.contains("fw-launcher-image"));
+        check("normal 60px circle", bubbleStyle().width === "60px" && bubbleStyle().borderRadius === "50%", bubbleStyle().width + " " + bubbleStyle().borderRadius);
+        check("aria-label Open chat", b.getAttribute("aria-label") === "Open chat");
+        b.click();
+        check("chat still opens", q(".fw-panel").classList.contains("fw-open"));
+        check("panel back at 74px", getComputedStyle(q(".fw-panel")).bottom === "74px", getComputedStyle(q(".fw-panel")).bottom);
+      });
+    },
+    launcher_http_rejected: function () {
+      interceptImages(generatedLauncherPng());
+      return inject({ "data-launcher-image-url": "http://cdn.example.com/launcher.png" }).then(function () {
+        var b = q(".fw-bubble");
+        check("http image ignored", b.querySelector("svg") && !b.querySelector("img") && !b.classList.contains("fw-launcher-image"));
+        check("nothing requested", requestedImages.length === 0, requestedImages.join(","));
       });
     },
     storage_blocked: function () {
