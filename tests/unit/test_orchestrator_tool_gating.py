@@ -71,7 +71,7 @@ def run_chat(monkeypatch):
         rag_calls.append(messages)
         yield "RAG ANSWER"
 
-    monkeypatch.setattr(orch_module, "generate_general_response", fake_general_response)
+    monkeypatch.setattr(orch_module, "generate_general_response_with_retry", fake_general_response)
 
     # Knowledge-base lookup and key resolution must not touch a real DB.
     import src.services.embeddings as embeddings

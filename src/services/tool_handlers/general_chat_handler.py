@@ -1,6 +1,6 @@
 from typing import AsyncGenerator, List, Dict, Any
 from src.services.tool_handlers.base import BaseToolHandler
-from src.services.agents.llm_tasks import generate_general_response
+from src.services.agents.llm_tasks import generate_general_response_with_retry
 from src.schemas.llm import BaseLLMConfig
 from src.utils.misc import get_model_id_and_service
 from src.schemas.upgrade_chat import ChatEventType as EventType
@@ -76,7 +76,7 @@ class GeneralChatHandler(BaseToolHandler):
             api_key=api_key
         )
 
-        async for chunk in generate_general_response(messages=messages, llm_config=llm_config):
+        async for chunk in generate_general_response_with_retry(messages=messages, llm_config=llm_config):
             if chunk:
                 self.response_manager.append_message_chunk(chunk)
                 async for event_chunk in self.response_manager.send_event(EventType.LLM_RESPONSE, chunk):

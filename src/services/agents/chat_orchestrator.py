@@ -12,7 +12,11 @@ from src.schemas.llm import BaseLLMConfig
 from src.services.map_model_provider import get_model_provider
 from src.storages.vectordb_storages.base import VectorDBQuery
 from src.core.settings import system_setting
-from src.services.agents.llm_tasks import generate_general_response
+from src.services.agents.llm_tasks import (
+    describe_llm_error,
+    generate_general_response_with_retry,
+    is_rate_limit_error,
+)
 
 # Missing imports for tools
 from src.services.query_analyzer import allowed_tools_for_agent, analyze_and_select_tools
@@ -332,13 +336,12 @@ class ChatOrchestrator:
                 ]
 
             try:
-                async for token in generate_general_response(messages=messages, llm_config=llm_service.config):
+                async for token in generate_general_response_with_retry(messages=messages, llm_config=llm_service.config):
                     full_response += token
                     yield token
             except Exception as stream_err:
-                logger.error(f"General streaming failed: {stream_err}")
-                err_str = str(stream_err).lower()
-                if "rate_limit" in err_str or "429" in err_str:
+                logger.error(f"General streaming failed: {describe_llm_error(stream_err, llm_service.config)}")
+                if is_rate_limit_error(stream_err):
                     yield "I apologize, but our servers are currently experiencing extremely high volume. Please try again in a few minutes."
                 else:
                     yield "I apologize, but I am experiencing some brief technical difficulties right now. Please try again in a moment."
@@ -389,13 +392,12 @@ class ChatOrchestrator:
 
             # Stream from LLM Task Layer for RAG
             try:
-                async for token in generate_general_response(messages=messages, llm_config=llm_service.config):
+                async for token in generate_general_response_with_retry(messages=messages, llm_config=llm_service.config):
                     full_response += token
                     yield token
             except Exception as stream_err:
-                logger.error(f"Streaming failed: {stream_err}")
-                err_str = str(stream_err).lower()
-                if "rate_limit" in err_str or "429" in err_str:
+                logger.error(f"Streaming failed: {describe_llm_error(stream_err, llm_service.config)}")
+                if is_rate_limit_error(stream_err):
                     yield "I apologize, but our servers are currently experiencing extremely high volume. Please try again in a few minutes."
                 else:
                     yield "I apologize, but I am experiencing some brief technical difficulties right now. Please try again in a moment."

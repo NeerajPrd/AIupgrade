@@ -27,6 +27,72 @@ from src.services.map_model_provider import get_model_provider
 #             yield content
 
 
+import asyncio
+import re
+
+from loguru import logger
+
+_RATE_LIMIT_MARKERS = ("429", "rate_limit", "rate limit", "resource_exhausted", "quota")
+_MAX_RETRY_DELAY_S = 8.0
+
+
+def is_rate_limit_error(err: BaseException) -> bool:
+    """True if the provider rejected the call for rate/quota reasons (e.g. Gemini 429 RESOURCE_EXHAUSTED)."""
+    if getattr(err, "status_code", None) == 429 or getattr(err, "code", None) == 429:
+        return True
+    text = str(err).lower()
+    return any(marker in text for marker in _RATE_LIMIT_MARKERS)
+
+
+def _is_daily_quota(err: BaseException) -> bool:
+    text = str(err).lower()
+    return "perday" in text or "per day" in text or "per_day" in text
+
+
+def _retry_delay_seconds(err: BaseException, attempt: int) -> float:
+    """Use the provider's suggested retry delay if present, else exponential backoff."""
+    match = re.search(r"retry(?:delay)?\D{0,12}?(\d+(?:\.\d+)?)\s*s", str(err), re.IGNORECASE)
+    delay = float(match.group(1)) if match else 2.0 * (2 ** attempt)
+    return min(delay, _MAX_RETRY_DELAY_S)
+
+
+def describe_llm_error(err: BaseException, llm_config: Optional[BaseLLMConfig] = None) -> str:
+    """One-line description of an LLM failure for logs, including the provider's own message."""
+    status = getattr(err, "status_code", None) or getattr(err, "code", None)
+    model = f"{llm_config.provider}/{llm_config.model}" if llm_config else "unknown model"
+    return f"{type(err).__name__} (status={status}) from {model}: {err}"
+
+
+async def generate_general_response_with_retry(
+    messages: List[Dict[str, Any]], llm_config: BaseLLMConfig, max_retries: int = 2
+):
+    """
+    Stream like generate_general_response, but retry on 429/quota errors that happen
+    before any token was sent. Mid-stream failures and daily-quota errors are re-raised.
+    """
+    attempt = 0
+    while True:
+        yielded_any = False
+        try:
+            async for token in generate_general_response(messages=messages, llm_config=llm_config):
+                yielded_any = True
+                yield token
+            return
+        except Exception as err:
+            if not is_rate_limit_error(err):
+                raise
+            if yielded_any or attempt >= max_retries or _is_daily_quota(err):
+                logger.error(f"LLM rate limit, giving up after {attempt + 1} attempt(s): {describe_llm_error(err, llm_config)}")
+                raise
+            delay = _retry_delay_seconds(err, attempt)
+            logger.warning(
+                f"LLM rate limit (attempt {attempt + 1}/{max_retries + 1}), retrying in {delay:.1f}s: "
+                f"{describe_llm_error(err, llm_config)}"
+            )
+            await asyncio.sleep(delay)
+            attempt += 1
+
+
 # This is for agent chat
 async def generate_general_response(
     messages: List[Dict[str, Any]], llm_config: BaseLLMConfig
