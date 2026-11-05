@@ -88,6 +88,10 @@
   h1 .grad{background:var(--gradient);-webkit-background-clip:text;background-clip:text;color:transparent;}
   .hero p.sub{font-size:19px;color:var(--text-dim);max-width:620px;margin:0 auto 40px;}
   .hero-ctas{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+  /* Hero two-column layout: text left, animated chat demo right; stacks below 900px */
+  .hero-grid{max-width:1160px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:48px;align-items:center;}
+  .hero-visual{min-width:0;}
+  @media (max-width:899.98px){.hero-grid{grid-template-columns:minmax(0,1fr);gap:56px;}}
 
   /* Sections */
   section{padding:96px 24px;}
@@ -226,6 +230,7 @@
 
 <main>
   <section class="hero">
+    <div class="hero-grid">
     <div class="hero-inner">
       <div class="eyebrow"><span class="dot"></span> 24/7 AI Sales &amp; Support Agents</div>
       <h1>Never Lose Another <span class="grad">Customer to Silence.</span></h1>
@@ -234,6 +239,280 @@
         <a href="#demo" class="btn btn-primary">See It In Action</a>
         <a href="#contact" class="btn btn-ghost">Talk to Us</a>
       </div>
+    </div>
+    <div class="hero-visual">
+      <!-- SPIRIT MONKEY HERO CHAT ANIMATION (from spirit-monkey-hero-chat.html). Self-contained, scoped under .smd -->
+      <div class="smd" id="smd" aria-label="Animated demo: Spirit Monkey AI chatbot answering website visitors">
+      <style>
+        .smd { --smd-a:#4f7cf7; --smd-b:#8b5cf6; --smd-ink:#111827; --smd-mute:#6b7280; --smd-line:#e5e7eb;
+               position:relative; width:100%; max-width:620px; margin:0 auto; text-align:left; font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color:var(--smd-ink); }
+        .smd *, .smd *::before, .smd *::after { box-sizing:border-box; }
+        /* Landing-page isolation: the host page has global .btn, img and body line-height rules.
+           Reset them here so they don't change the animation. */
+        .smd { line-height:normal; }
+        .smd img { max-width:none; }
+        .smd .smd-sitehero .btn { display:block; padding:0; border:0; gap:0; font-size:0; box-shadow:none; cursor:default; transform:none; white-space:normal; }
+
+        /* industry tabs */
+        .smd-tabs { display:flex; gap:8px; justify-content:center; margin-bottom:14px; flex-wrap:wrap; }
+        .smd-tab { font-size:12.5px; font-weight:600; padding:6px 12px; border-radius:999px; border:1px solid var(--smd-line); background:#fff; color:var(--smd-mute); cursor:pointer; transition:all .3s; }
+        .smd-tab.on { color:#fff; border-color:transparent; background:linear-gradient(90deg,var(--smd-a),var(--smd-b)); box-shadow:0 6px 16px -6px rgba(99,102,241,.6); }
+
+        /* browser frame */
+        .smd-browser { position:relative; border-radius:16px; background:#fff; border:1px solid var(--smd-line); overflow:hidden;
+                       box-shadow:0 30px 60px -20px rgba(79,70,229,.28), 0 12px 24px -12px rgba(17,24,39,.15); }
+        .smd-bar { display:flex; align-items:center; gap:10px; padding:10px 14px; background:#f9fafb; border-bottom:1px solid var(--smd-line); }
+        .smd-dots { display:flex; gap:6px; } .smd-dots i { width:10px; height:10px; border-radius:50%; background:#e5e7eb; display:block; }
+        .smd-dots i:nth-child(1){background:#fca5a5} .smd-dots i:nth-child(2){background:#fcd34d} .smd-dots i:nth-child(3){background:#86efac}
+        .smd-url { flex:1; font-size:12px; color:var(--smd-mute); background:#fff; border:1px solid var(--smd-line); border-radius:8px; padding:5px 10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .smd-url b { color:var(--smd-ink); font-weight:500; }
+
+        /* fake client website */
+        .smd-site { position:relative; height:440px; overflow:hidden; transition:background .6s; }
+        .smd-nav { display:flex; align-items:center; justify-content:space-between; padding:14px 18px; }
+        .smd-brand { display:flex; align-items:center; gap:8px; font-weight:700; font-size:14px; }
+        .smd-brand i { width:22px; height:22px; border-radius:6px; display:block; transition:background .6s; }
+        .smd-navlinks { display:flex; gap:10px; } .smd-navlinks i { width:34px; height:7px; border-radius:4px; background:rgba(17,24,39,.12); display:block; }
+        .smd-sitehero { padding:18px 18px 0; max-width:46%; }
+        .smd-sitehero h4 { margin:0 0 8px; font-size:20px; line-height:1.2; letter-spacing:-.01em; }
+        .smd-sitehero .ln { height:7px; border-radius:4px; background:rgba(17,24,39,.10); margin:7px 0; }
+        .smd-sitehero .btn { margin-top:14px; width:96px; height:26px; border-radius:7px; transition:background .6s; }
+        .smd-cards { position:absolute; left:18px; bottom:18px; display:flex; gap:10px; }
+        .smd-cards i { width:70px; height:56px; border-radius:10px; background:rgba(17,24,39,.06); display:block; }
+
+        /* chat window */
+        .smd-chat { position:absolute; right:14px; bottom:14px; width:300px; max-width:calc(100% - 28px); height:372px; background:#fff; border-radius:16px;
+                    border:1px solid var(--smd-line); box-shadow:0 20px 40px -12px rgba(17,24,39,.28); display:flex; flex-direction:column; overflow:hidden;
+                    transform-origin:bottom right; transition:transform .45s cubic-bezier(.2,.9,.3,1.2), opacity .3s; }
+        .smd-chat.closed { transform:scale(.2); opacity:0; }
+        .smd-head { display:flex; align-items:center; gap:10px; padding:11px 13px; color:#fff; background:linear-gradient(90deg,var(--smd-a),var(--smd-b)); }
+        .smd-ava { position:relative; width:32px; height:32px; border-radius:50%; background:#fff; display:grid; place-items:center; flex:none; overflow:visible; }
+        .smd-ava img { width:26px; height:26px; object-fit:contain; border-radius:50%; }
+        .smd-ava::after { content:""; position:absolute; right:-1px; bottom:-1px; width:10px; height:10px; border-radius:50%; background:#22c55e; border:2px solid #fff; }
+        .smd-head b { display:block; font-size:13.5px; } .smd-head small { font-size:11px; opacity:.9; }
+        .smd-msgs { flex:1; padding:12px; overflow:hidden; display:flex; flex-direction:column; gap:8px; justify-content:flex-end; background:#fafafb; -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 28px); mask-image:linear-gradient(to bottom,transparent 0,#000 28px); }
+        .smd-msg { max-width:84%; font-size:12.8px; line-height:1.45; padding:8px 11px; border-radius:14px; animation:smdIn .35s ease both; }
+        .smd-msg.user { align-self:flex-end; color:#fff; background:linear-gradient(90deg,var(--smd-a),var(--smd-b)); border-bottom-right-radius:4px; }
+        .smd-msg.bot { align-self:flex-start; background:#fff; border:1px solid var(--smd-line); border-bottom-left-radius:4px; }
+        .smd-msg .t { display:block; font-size:10px; opacity:.6; margin-top:3px; }
+        .smd-typing { align-self:flex-start; background:#fff; border:1px solid var(--smd-line); border-radius:14px; padding:10px 12px; display:flex; gap:4px; animation:smdIn .3s ease both; }
+        .smd-typing i { width:6px; height:6px; border-radius:50%; background:#a5b4fc; display:block; animation:smdDot 1s infinite; }
+        .smd-typing i:nth-child(2){animation-delay:.15s} .smd-typing i:nth-child(3){animation-delay:.3s}
+        .smd-lead { align-self:stretch; background:#fff; border:1px dashed #a5b4fc; border-radius:12px; padding:9px 11px; font-size:12px; animation:smdIn .35s ease both; }
+        .smd-lead b { display:block; color:#4f46e5; margin-bottom:3px; font-size:11.5px; }
+        .smd-input { display:flex; align-items:center; gap:8px; padding:9px 10px; border-top:1px solid var(--smd-line); background:#fff; }
+        .smd-field { flex:1; font-size:12.5px; color:var(--smd-ink); min-height:18px; white-space:nowrap; overflow:hidden; }
+        .smd-field:empty::before { content:"Type your question…"; color:#9ca3af; }
+        .smd-field.typing::after { content:""; display:inline-block; width:1px; height:13px; background:var(--smd-ink); margin-left:1px; vertical-align:-2px; animation:smdBlink .8s steps(1) infinite; }
+        .smd-send { width:28px; height:28px; border-radius:50%; display:grid; place-items:center; background:linear-gradient(90deg,var(--smd-a),var(--smd-b)); }
+        .smd-send svg { width:13px; height:13px; fill:#fff; }
+
+        /* launcher bubble (your avatar, not a generic chat icon) */
+        .smd-launch { position:absolute; right:14px; bottom:14px; width:54px; height:54px; border-radius:50%; background:#fff; display:grid; place-items:center;
+                      box-shadow:0 10px 24px -6px rgba(79,70,229,.55); border:2px solid #c7d2fe; transition:transform .3s, opacity .3s; }
+        .smd-launch img { width:40px; height:40px; object-fit:contain; border-radius:50%; }
+        .smd-launch::after { content:""; position:absolute; right:2px; bottom:2px; width:12px; height:12px; border-radius:50%; background:#22c55e; border:2px solid #fff; }
+        .smd-launch.hide { transform:scale(.5); opacity:0; }
+        .smd-greet { position:absolute; right:76px; bottom:26px; background:#fff; border:1px solid var(--smd-line); border-radius:12px; padding:8px 11px; font-size:12.5px;
+                     box-shadow:0 8px 20px -8px rgba(17,24,39,.25); white-space:nowrap; transition:opacity .3s, transform .3s; }
+        .smd-greet.hide { opacity:0; transform:translateY(6px); }
+
+        /* floating proof badges */
+        .smd-badge { position:absolute; z-index:3; display:flex; align-items:center; gap:8px; background:#fff; border:1px solid var(--smd-line); border-radius:12px;
+                     padding:8px 12px; font-size:12px; font-weight:600; box-shadow:0 14px 30px -12px rgba(17,24,39,.3); opacity:0; transform:translateY(8px) scale(.96);
+                     transition:opacity .4s, transform .4s; pointer-events:none; }
+        .smd-badge.show { opacity:1; transform:none; }
+        .smd-badge em { font-style:normal; width:24px; height:24px; border-radius:7px; display:grid; place-items:center; font-size:13px; }
+        .smd-badge small { display:block; font-weight:500; color:var(--smd-mute); font-size:10.5px; }
+        .smd-b1 { left:-22px; top:330px; } .smd-b1 em { background:#ede9fe; }
+        .smd-b2 { left:-10px; bottom:40px; } .smd-b2 em { background:#dcfce7; }
+        .smd-b3 { right:-18px; top:58px; } .smd-b3 em { background:#e0e7ff; }
+
+        @keyframes smdIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+        @keyframes smdDot { 0%,80%,100% { transform:translateY(0); opacity:.5; } 40% { transform:translateY(-4px); opacity:1; } }
+        @keyframes smdBlink { 50% { opacity:0; } }
+
+        @media (max-width: 560px) {
+          .smd-site { height:420px; } .smd-sitehero { max-width:100%; } .smd-sitehero h4 { font-size:17px; }
+          .smd-chat { width:auto; left:14px; height:352px; }
+          .smd-b1, .smd-b3 { display:none; } .smd-b2 { left:8px; bottom:auto; top:58px; }
+          .smd-cards { display:none; }
+        }
+        @media (prefers-reduced-motion: reduce) { .smd *, .smd *::before, .smd *::after { animation:none !important; transition:none !important; } }
+      </style>
+
+        <div class="smd-tabs" role="tablist"></div>
+
+        <div class="smd-browser">
+          <div class="smd-bar">
+            <div class="smd-dots"><i></i><i></i><i></i></div>
+            <div class="smd-url">🔒 <b class="smd-domain">yourbusiness.com</b></div>
+          </div>
+
+          <div class="smd-site">
+            <div class="smd-nav">
+              <div class="smd-brand"><i class="smd-brandmark"></i><span class="smd-brandname">Your Business</span></div>
+              <div class="smd-navlinks"><i></i><i></i><i></i></div>
+            </div>
+            <div class="smd-sitehero">
+              <h4 class="smd-headline">Welcome</h4>
+              <div class="ln" style="width:92%"></div><div class="ln" style="width:76%"></div><div class="ln" style="width:60%"></div>
+              <div class="btn smd-sitebtn"></div>
+            </div>
+            <div class="smd-cards"><i></i><i></i><i></i></div>
+
+            <div class="smd-greet hide">Namaste! 👋 Ask me anything</div>
+            <div class="smd-launch"><img class="smd-logo" alt="Spirit Monkey assistant"></div>
+
+            <div class="smd-chat closed" aria-live="polite">
+              <div class="smd-head">
+                <div class="smd-ava"><img class="smd-logo" alt=""></div>
+                <div><b class="smd-botname">Assistant</b><small>Online · replies instantly</small></div>
+              </div>
+              <div class="smd-msgs"></div>
+              <div class="smd-input">
+                <div class="smd-field"></div>
+                <div class="smd-send"><svg viewBox="0 0 24 24"><path d="M3 20.5 21 12 3 3.5l.01 6.6L15 12 3.01 13.9z"/></svg></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="smd-badge smd-b1"><em>⚡</em><div>Replied in 2 seconds<small>No waiting, no missed leads</small></div></div>
+        <div class="smd-badge smd-b2"><em>✓</em><div>New lead captured<small>Sent to your team instantly</small></div></div>
+        <div class="smd-badge smd-b3"><em>🌙</em><div><span class="smd-time">2:14 AM</span><small>Answering while you sleep</small></div></div>
+
+      <script>
+      (function () {
+        /* ---- EDIT HERE: logo + conversations ------------------------------- */
+        var LOGO = "/assets/Spirit-monkey-logo-only.png";
+
+        // Fictional example businesses. Each step: u = visitor says, b = bot says, lead = lead-capture card.
+        var SCENARIOS = [
+          { tab:"🎓 Colleges", domain:"sunrise-college.edu.np", name:"Sunrise College", bot:"Sunrise Admissions Assistant",
+            color:"#0ea5e9", bg:"linear-gradient(180deg,#f0f9ff,#fff)", headline:"Admissions open for BBA & BSc CSIT", time:"11:48 PM",
+            steps:[
+              { u:"What is the fee for BSc CSIT?" },
+              { b:"BSc CSIT costs NPR 4,20,000 for the full 4 years, payable in 8 semester instalments. Scholarships up to 50% are available for top entrance scorers 🎓" },
+              { u:"When is the entrance exam?" },
+              { b:"The next entrance exam is on Mangsir 15. Want me to have our admissions team call you with the form details?" },
+              { lead:"Ramesh K. · 98XXXXXXXX · BSc CSIT enquiry" }
+            ]},
+          { tab:"🏥 Hospitals", domain:"citycare-hospital.com.np", name:"CityCare Hospital", bot:"CityCare Help Desk",
+            color:"#10b981", bg:"linear-gradient(180deg,#ecfdf5,#fff)", headline:"Book an appointment with our specialists", time:"2:14 AM",
+            steps:[
+              { u:"Is the cardiologist available on Sunday?" },
+              { b:"Yes! Dr. Sharma (Cardiology) sees patients on Sunday, 10 AM – 2 PM. OPD ticket fee is NPR 800." },
+              { u:"How do I book?" },
+              { b:"You can book online in 1 minute, or share your name and number and our front desk will confirm your slot first thing in the morning." },
+              { lead:"Sita M. · 98XXXXXXXX · Cardiology, Sunday" }
+            ]},
+          { tab:"🛒 Online stores", domain:"himali-handicrafts.com", name:"Himali Handicrafts", bot:"Himali Shop Assistant",
+            color:"#f59e0b", bg:"linear-gradient(180deg,#fffbeb,#fff)", headline:"Handmade in Nepal. Delivered to your door.", time:"9:32 PM",
+            steps:[
+              { u:"Do you deliver to Pokhara?" },
+              { b:"Yes, we deliver all over Nepal 🚚 Pokhara orders arrive in 2–3 days, and delivery is free on orders above NPR 2,000." },
+              { u:"Can I pay with eSewa?" },
+              { b:"Absolutely! We accept eSewa, Khalti, card and cash on delivery. Shall I help you find the singing bowl you viewed earlier?" },
+              { lead:"Order assist · Singing bowl · Pokhara" }
+            ]}
+        ];
+        /* -------------------------------------------------------------------- */
+
+        var root = document.getElementById("smd");
+        var $ = function (s) { return root.querySelector(s); };
+        var $$ = function (s) { return root.querySelectorAll(s); };
+        var msgs = $(".smd-msgs"), field = $(".smd-field"), chat = $(".smd-chat"),
+            launch = $(".smd-launch"), greet = $(".smd-greet"), tabs = $(".smd-tabs");
+        var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+        $$(".smd-logo").forEach(function (img) {
+          img.src = LOGO;
+          img.onerror = function () { img.replaceWith(Object.assign(document.createElement("span"), { textContent:"🐒", style:"font-size:20px" })); };
+        });
+
+        SCENARIOS.forEach(function (s, i) {
+          var b = document.createElement("button");
+          b.className = "smd-tab"; b.type = "button"; b.textContent = s.tab; b.setAttribute("role","tab");
+          b.onclick = function () { start(i); };
+          tabs.appendChild(b);
+        });
+
+        var run = 0, visible = true, current = 0;
+        function wait(ms, id) {
+          return new Promise(function (res, rej) {
+            (function tick(left) {
+              if (id !== run) return rej("cancel");
+              if (!visible) return setTimeout(function(){ tick(left); }, 200);   // pause when off-screen
+              if (left <= 0) return res();
+              setTimeout(function(){ tick(left - 100); }, 100);
+            })(reduced ? Math.min(ms, 300) : ms);
+          });
+        }
+        function el(cls, html) { var d = document.createElement("div"); d.className = cls; d.innerHTML = html; return d; }
+        function add(node) { msgs.appendChild(node); while (msgs.children.length > 6) msgs.removeChild(msgs.firstChild); }
+        function badge(sel, on) { var b = $(sel); if (b) b.classList.toggle("show", on); }
+
+        async function play(i, id) {
+          var s = SCENARIOS[i];
+          current = i;
+          $$(".smd-tab").forEach(function (t, k) { t.classList.toggle("on", k === i); });
+          $(".smd-domain").textContent = s.domain;
+          $(".smd-brandname").textContent = s.name;
+          $(".smd-brandmark").style.background = s.color;
+          $(".smd-sitebtn").style.background = s.color;
+          $(".smd-site").style.background = s.bg;
+          $(".smd-headline").textContent = s.headline;
+          $(".smd-botname").textContent = s.bot;
+          $(".smd-time").textContent = "Answered at " + s.time;
+          msgs.innerHTML = ""; field.textContent = "";
+          chat.classList.add("closed"); launch.classList.remove("hide"); greet.classList.add("hide");
+          [".smd-b1",".smd-b2",".smd-b3"].forEach(function (b) { badge(b, false); });
+
+          await wait(700, id);  greet.classList.remove("hide");
+          await wait(1600, id); greet.classList.add("hide"); launch.classList.add("hide"); chat.classList.remove("closed");
+          await wait(500, id);  badge(".smd-b3", true);
+
+          var firstReply = true;
+          for (var k = 0; k < s.steps.length; k++) {
+            var st = s.steps[k];
+            if (st.u) {
+              field.classList.add("typing");
+              for (var c = 1; c <= st.u.length; c++) { field.textContent = st.u.slice(0, c); await wait(reduced ? 0 : 38, id); }
+              await wait(350, id);
+              field.classList.remove("typing"); field.textContent = "";
+              add(el("smd-msg user", st.u));
+              await wait(450, id);
+            } else if (st.b) {
+              var typing = el("smd-typing", "<i></i><i></i><i></i>"); add(typing);
+              await wait(1100, id); typing.remove();
+              add(el("smd-msg bot", st.b + '<span class="t">' + s.time + "</span>"));
+              if (firstReply) { badge(".smd-b1", true); firstReply = false; }
+              await wait(Math.max(1800, st.b.length * 32), id);
+            } else if (st.lead) {
+              add(el("smd-lead", "<b>✓ Lead sent to " + s.name + "</b>" + st.lead));
+              badge(".smd-b2", true);
+              await wait(3200, id);
+            }
+          }
+        }
+
+        async function start(i) {
+          var id = ++run;
+          try {
+            while (true) { await play(i, id); i = (i + 1) % SCENARIOS.length; }
+          } catch (e) { /* cancelled by tab click */ }
+        }
+
+        if ("IntersectionObserver" in window) {
+          new IntersectionObserver(function (es) { visible = es[0].isIntersecting; }, { threshold: 0.15 }).observe(root);
+        }
+        start(0);
+      })();
+      </script>
+      </div>
+      <!-- END SPIRIT MONKEY HERO CHAT ANIMATION -->
+    </div>
     </div>
   </section>
 
