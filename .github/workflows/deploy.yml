@@ -8,6 +8,8 @@ on:
 jobs:
   deploy-to-vm:
     runs-on: ubuntu-latest
+    env:
+      UV_PYTHON: "3.12"
 
     steps:
       - name: Checkout code
@@ -17,9 +19,12 @@ jobs:
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
 
-      - name: Install Python 3.11 with UV (on runner)
+      - name: Install Python 3.12 with UV (on runner)
         run: |
-          uv python install 3.11
+          uv python install 3.12
+
+      - name: Show Python version
+        run: uv run python --version
 
       - name: Create virtual environment (runner)
         run: uv venv

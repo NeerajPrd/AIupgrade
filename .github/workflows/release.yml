@@ -16,6 +16,8 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      UV_PYTHON: "3.12"
     services:
       postgres:
         image: pgvector/pgvector:pg16
@@ -32,6 +34,10 @@ jobs:
         with:
           token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
       - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - name: Show Python version
+        run: uv run python --version
       - run: uv sync --all-extras --dev
       - run: uv run pytest -q
         env:
@@ -75,6 +81,8 @@ jobs:
   pypi:
     needs: test
     runs-on: ubuntu-latest
+    env:
+      UV_PYTHON: "3.12"
     environment: pypi
     permissions:
       id-token: write
@@ -83,6 +91,10 @@ jobs:
         with:
           token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
       - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - name: Show Python version
+        run: uv run python --version
       - run: uv build
       - uses: pypa/gh-action-pypi-publish@release/v1
 
