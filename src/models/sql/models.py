@@ -74,6 +74,9 @@ class Agent(Base):
     # Max new widget/API conversations since chat_cap_starts_at (Asia/Kathmandu). NULL = unlimited.
     chat_cap: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     chat_cap_starts_at: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    # Email the client when a widget visitor leaves contact details (see src/services/leads).
+    lead_notify_enabled: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    lead_notify_emails: Mapped[List[str]] = mapped_column(JSONB, default=list, server_default="[]")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
@@ -233,3 +236,4 @@ from src.models.sql.vibe_coder_models import VibeCodeExecution, UserLLMConfigDB
 
 # Import Agent API model so Alembic can find it via Base metadata
 from src.models.sql.agent_api import AgentAPI
+from src.models.sql.lead import Lead

@@ -6,7 +6,7 @@ from uuid import UUID
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Header, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Header, Request, status
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -23,6 +23,8 @@ from src.services.agents.conversation_usage import (
     count_new_conversations,
     is_cap_reached,
 )
+from src.services.leads.detection import has_contact_info
+from src.services.leads.service import process_lead_in_background
 
 router = APIRouter()
 
@@ -241,6 +243,7 @@ async def chat_via_agent_api(
     slug: str,
     body: AgentApiChatRequest,
     request: Request,
+    background_tasks: BackgroundTasks,
     x_api_key: str = Header(..., alias="X-API-Key"),
     db: AsyncSession = Depends(get_db),
 ):
@@ -354,6 +357,14 @@ async def chat_via_agent_api(
     await db.commit()
 
     duration_ms = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
+
+    # 7. Lead capture. The regex gate costs microseconds; only messages with a phone number or
+    #    email schedule work, which runs after the response has been sent (see src/services/leads).
+    postgres_manager = getattr(request.app.state, "postgres_manager", None)
+    if postgres_manager is not None and has_contact_info(body.message):
+        background_tasks.add_task(
+            process_lead_in_background, postgres_manager, str(agent.id), conversation_id, body.message
+        )
 
     return {
         "success": True,

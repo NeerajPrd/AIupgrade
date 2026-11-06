@@ -166,7 +166,11 @@ async def test_usage_summary_shape(monkeypatch):
         assert since == date(2026, 10, 15)
         return 400
 
+    async def fake_leads(db, agent_id):
+        return {"2026-11": 7, "2026-12": 1}
+
     monkeypatch.setattr(cu, "monthly_counts", fake_monthly)
+    monkeypatch.setattr(cu, "monthly_lead_counts", fake_leads)
     monkeypatch.setattr(cu, "count_new_conversations", fake_count)
     agent = SimpleNamespace(id=uuid.uuid4(), name="Nepalland", chat_cap=400, chat_cap_starts_at=date(2026, 10, 15))
     s = await cu.usage_summary(None, agent)
@@ -175,8 +179,9 @@ async def test_usage_summary_shape(monkeypatch):
     assert s["cap_reached"] is True
     assert s["chat_cap_starts_at"] == "2026-10-15"
     assert s["monthly"] == [
-        {"month": "2026-10", "count": 150, "bracket": "up to 200"},
-        {"month": "2026-11", "count": 250, "bracket": "201 to 400"},
+        {"month": "2026-10", "count": 150, "bracket": "up to 200", "leads": 0},
+        {"month": "2026-11", "count": 250, "bracket": "201 to 400", "leads": 7},
+        {"month": "2026-12", "count": 0, "bracket": "up to 200", "leads": 1},
     ]
     assert s["timezone"] == "Asia/Kathmandu"
 

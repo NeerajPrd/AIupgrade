@@ -1,5 +1,6 @@
 from email.mime.text import MIMEText
 from email.header import Header
+from email.utils import formataddr
 from loguru import logger
 
 from src.core.settings import system_setting
@@ -46,6 +47,38 @@ class EmailService:
             raise AppError(
                 f"An unexpected error occurred while sending email: {e}", 500
             )
+
+    async def send_html_email(
+        self,
+        to_emails: list[str],
+        subject: str,
+        html_content: str,
+        reply_to: str | None = None,
+        from_name: str | None = None,
+    ) -> bool:
+        """
+        Send one UTF-8 HTML email to several recipients. Returns False (without
+        raising) when SMTP is not configured; raises AppError on send failure.
+        """
+        if not system_setting.smtp_configured:
+            logger.info(
+                "SMTP not configured — skipping email to {} recipient(s).", len(to_emails)
+            )
+            return False
+
+        msg = MIMEText(html_content, "html", "utf-8")
+        sender = system_setting.EMAIL_FROM
+        if from_name and "<" not in sender:
+            sender = formataddr((from_name, sender))
+        msg["From"] = sender
+        msg["To"] = ", ".join(to_emails)
+        msg["Subject"] = Header(subject, "utf-8")
+        if reply_to:
+            msg["Reply-To"] = reply_to
+
+        await self._smtp_handler.send_message(msg)
+        logger.success("Email sent to {} recipient(s)", len(to_emails))
+        return True
 
     async def send_signup_email(self, to_email: str, url: str) -> bool:
         """

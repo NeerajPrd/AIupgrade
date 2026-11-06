@@ -101,6 +101,14 @@ async def monthly_counts(db: AsyncSession, agent_id: uuid.UUID) -> Dict[str, int
     return bucket_by_month(result.scalars().all())
 
 
+async def monthly_lead_counts(db: AsyncSession, agent_id: uuid.UUID) -> Dict[str, int]:
+    """Leads captured per Kathmandu calendar month, e.g. {'2026-11': 4}."""
+    from src.models.sql.lead import Lead
+
+    result = await db.execute(select(Lead.created_at).where(Lead.agent_id == agent_id))
+    return bucket_by_month(result.scalars().all())
+
+
 async def conversation_belongs_to_agent(
     db: AsyncSession, conversation_id: str, agent_id: uuid.UUID
 ) -> bool:
@@ -127,6 +135,7 @@ async def conversation_belongs_to_agent(
 async def usage_summary(db: AsyncSession, agent) -> dict:
     """Everything the admin endpoint and CLI script report for one agent."""
     months = await monthly_counts(db, agent.id)
+    lead_months = await monthly_lead_counts(db, agent.id)
     since_cap = await count_new_conversations(db, agent.id, agent.chat_cap_starts_at)
     current_month = datetime.now(KATHMANDU_TZ).strftime("%Y-%m")
     return {
@@ -139,8 +148,15 @@ async def usage_summary(db: AsyncSession, agent) -> dict:
         "cap_reached": is_cap_reached(agent.chat_cap, since_cap),
         "current_month": current_month,
         "current_month_count": months.get(current_month, 0),
+        "current_month_leads": lead_months.get(current_month, 0),
         "monthly": [
-            {"month": m, "count": n, "bracket": bracket_for(n)} for m, n in months.items()
+            {
+                "month": m,
+                "count": months.get(m, 0),
+                "bracket": bracket_for(months.get(m, 0)),
+                "leads": lead_months.get(m, 0),
+            }
+            for m in sorted(set(months) | set(lead_months))
         ],
         "timezone": "Asia/Kathmandu",
     }

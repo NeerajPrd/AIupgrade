@@ -179,3 +179,34 @@ def test_invalid_key_still_401(setup):
 
     r = _TC(setup.app).post(f"/api/v1/agent-api/{SLUG}/chat", json={"message": "hi"}, headers={"X-API-Key": "wrong"})
     assert r.status_code == 401
+
+
+# --------------------------------------------------------------------------- #
+# lead capture gate
+# --------------------------------------------------------------------------- #
+@pytest.fixture
+def lead_calls(setup, monkeypatch):
+    calls = []
+
+    async def fake_process(postgres_manager, agent_id, history_id, message):
+        calls.append({"agent_id": agent_id, "history_id": history_id, "message": message})
+
+    monkeypatch.setattr(agent_api_module, "process_lead_in_background", fake_process)
+    setup.app.state.postgres_manager = object()
+    return calls
+
+
+def test_message_with_phone_schedules_lead_processing(setup, lead_calls):
+    r = setup.post({"message": "Call me on 9841234567"})
+    assert r.status_code == 200
+    assert r.json()["response"] == "Hello there"
+    assert lead_calls == [{
+        "agent_id": str(setup.agent.id),
+        "history_id": r.json()["conversation_id"],
+        "message": "Call me on 9841234567",
+    }]
+
+
+def test_message_without_contact_schedules_nothing(setup, lead_calls):
+    setup.post({"message": "Is it NPR 7,500 per month in 2026?"})
+    assert lead_calls == []
