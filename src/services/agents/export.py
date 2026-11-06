@@ -6,6 +6,14 @@ from datetime import datetime
 from typing import Any, Dict, List
 
 from docx import Document
+from docx.enum.style import WD_STYLE_TYPE
+from docx.oxml.ns import qn
+
+# Font Word should use for Devanagari (Nepali/Hindi) text. Word treats
+# Devanagari as a "complex script", and python-docx's default template leaves
+# that slot on a theme font without Devanagari glyphs, so Nepali showed as boxes.
+# Nirmala UI ships with Windows 8+; Word substitutes a Devanagari font elsewhere.
+DEVANAGARI_FONT = "Nirmala UI"
 
 _BOLD_RE = re.compile(r"\*\*(.+?)\*\*")
 _BULLET_RE = re.compile(r"^\s*[*-]\s+(.+)")
@@ -17,6 +25,7 @@ def build_conversations_docx(agent_name: str, period_label: str, conversations: 
     conversations: [{"title", "created_at" (iso str), "messages": [{"role", "content", "created_at"}]}]
     """
     document = Document()
+    _use_devanagari_font(document)
 
     document.add_heading(f"{agent_name} — Conversations ({period_label})", level=0)
     document.add_paragraph(
@@ -50,6 +59,20 @@ def build_conversations_docx(agent_name: str, period_label: str, conversations: 
     document.save(buffer)
     buffer.seek(0)
     return buffer
+
+
+def _use_devanagari_font(document: Document) -> None:
+    """Point the complex-script font of every paragraph/character style at a Devanagari font."""
+    for style in document.styles:
+        if style.type not in (WD_STYLE_TYPE.PARAGRAPH, WD_STYLE_TYPE.CHARACTER):
+            continue
+        rpr = style.element.get_or_add_rPr()
+        rfonts = rpr.find(qn("w:rFonts"))
+        if rfonts is None:
+            rfonts = rpr.makeelement(qn("w:rFonts"), {})
+            rpr.insert(0, rfonts)
+        rfonts.attrib.pop(qn("w:cstheme"), None)
+        rfonts.set(qn("w:cs"), DEVANAGARI_FONT)
 
 
 def _add_message_body(document: Document, content: str) -> None:
