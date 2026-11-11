@@ -1,3 +1,5 @@
+from email.mime.application import MIMEApplication
+from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.header import Header
 from email.utils import formataddr
@@ -55,10 +57,12 @@ class EmailService:
         html_content: str,
         reply_to: str | None = None,
         from_name: str | None = None,
+        attachments: list[tuple[str, bytes, str]] | None = None,
     ) -> bool:
         """
         Send one UTF-8 HTML email to several recipients. Returns False (without
         raising) when SMTP is not configured; raises AppError on send failure.
+        attachments: (filename, content, MIME subtype) tuples.
         """
         if not system_setting.smtp_configured:
             logger.info(
@@ -67,6 +71,13 @@ class EmailService:
             return False
 
         msg = MIMEText(html_content, "html", "utf-8")
+        if attachments:
+            body, msg = msg, MIMEMultipart("mixed")
+            msg.attach(body)
+            for filename, content, subtype in attachments:
+                part = MIMEApplication(content, _subtype=subtype)
+                part.add_header("Content-Disposition", "attachment", filename=filename)
+                msg.attach(part)
         sender = system_setting.EMAIL_FROM
         if from_name and "<" not in sender:
             sender = formataddr((from_name, sender))
@@ -84,9 +95,9 @@ class EmailService:
         """
         Sends a signup verification email.
         """
-        subject = "Welcome to Fagoon! Please verify your email."
+        subject = "Welcome to Spirit Monkey! Please verify your email."
         html_content = f"""
-        <h1>Welcome to Fagoon AI!</h1>
+        <h1>Welcome to Spirit Monkey!</h1>
         <p>Thank you for signing up. Please verify your email by clicking the
         link below:</p>
         <p><a href="{url}">Verify Your Email</a></p>
@@ -99,7 +110,7 @@ class EmailService:
         """
         Sends a forgot password email.
         """
-        subject = "Fagoon's AI Password Reset Request"
+        subject = "Spirit Monkey Password Reset Request"
         html_content = f"""
         <h1>Password Reset</h1>
         <p>You have requested a password reset. Please click the link below to

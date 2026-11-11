@@ -189,6 +189,10 @@ async def lifespan(app: FastAPI):
     # Automatically pull configured Ollama fallback model in the background
     asyncio.create_task(_auto_pull_ollama_model())
 
+    # Email each client last month's report at the start of the month (see src/services/reports/scheduler.py).
+    from src.services.reports.scheduler import monthly_report_loop
+    app.state.monthly_report_task = asyncio.create_task(monthly_report_loop(postgres_manager_instance_local))
+
     yield
 
     logger.info("Application shutting down...")
