@@ -19,6 +19,7 @@ import {
   QuestionCount,
 } from "@/lib/api/admin";
 import { showErrorToast, showSuccessToast } from "@/utils/toast";
+import LeadSettingsCard from "./lead-settings-card";
 
 const NEPAL = "Asia/Kathmandu";
 const fieldClass =
@@ -243,6 +244,8 @@ export default function LeadsPage() {
           </CardContent>
         </Card>
       )}
+
+      {!!agentId && <LeadSettingsCard key={agentId} agentId={agentId} />}
 
       {!!agents.data?.length && (
         <Card>

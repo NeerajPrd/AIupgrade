@@ -118,6 +118,12 @@ def test_widget_chat_asks_for_knowledge_base_only_routing(setup):
     assert setup.app.state.chat_orchestrator.calls[0]["knowledge_base_only"] is True
 
 
+def test_reply_carries_whatsapp_handoff_only_when_number_is_set(setup):
+    assert "handoff" not in setup.post({"message": "hi"}).json()
+    setup.agent.lead_whatsapp_number = "+9779841234567"
+    assert setup.post({"message": "hi"}).json()["handoff"] == {"whatsapp": "9779841234567"}
+
+
 def test_new_conversation_is_tagged_agent_api(setup):
     setup.post({"message": "hi"})
     assert setup.app.state.agent_chat_service.created[0]["source"] == "agent_api"

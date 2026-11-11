@@ -1,10 +1,10 @@
 /**
- * Fagoon Agent Chat Widget — standalone, dependency-free embed script.
+ * Spirit Monkey Chat Widget — standalone, dependency-free embed script.
  *
  * Usage (on any third-party site):
  *   <script
- *     src="https://your-fagoon-host/widget.js"
- *     data-api-base="https://your-fagoon-host"
+ *     src="https://your-dashboard-host/widget.js"
+ *     data-api-base="https://your-api-host"
  *     data-agent-slug="my-agent-slug"
  *     data-api-key="agapi_xxxxxxxxxxxx"
  *     data-agent-name="Support Bot"
@@ -12,7 +12,7 @@
  *   ></script>
  *
  * Or point straight at the endpoint instead of base+slug:
- *     data-endpoint="https://your-fagoon-host/api/v1/agent-api/my-agent-slug/chat"
+ *     data-endpoint="https://your-api-host/api/v1/agent-api/my-agent-slug/chat"
  *
  * Optional (invalid values fall back to safe defaults):
  *   data-brand-color      hex colour, "#rgb" or "#rrggbb" (data-primary-color is the legacy alias)
@@ -22,6 +22,13 @@
  *   data-launcher-image-url  https:// image (e.g. transparent PNG) shown as-is as the chat
  *                         launcher instead of the round icon; falls back to the icon if it fails to load
  *   data-launcher-width   launcher image width in px, default 130, clamped 80-200 (max 130 on phones)
+ *   data-quick-replies    up to 4 suggested first messages shown as buttons under the welcome
+ *                         message, separated by "|", e.g. "Pricing|Free trial|Talk to a human"
+ *                         (each max 40 characters; clicking one sends it as the visitor's message)
+ *
+ * "Chat on WhatsApp": when the assistant's owner has a WhatsApp number set (server-side, per
+ * assistant), the chat API returns it with each reply and a small button appears that opens
+ * wa.me with the visitor's last question pre-filled. Nothing to configure on the page.
  *
  * The conversation id is kept in localStorage for 24 hours from when the
  * conversation started, so a page reload continues the same conversation.
@@ -92,6 +99,27 @@
     return Math.min(200, Math.max(80, parseInt(match[1], 10)));
   }
 
+  var QUICK_REPLY_MAX = 4;
+  var QUICK_REPLY_MAX_LENGTH = 40;
+
+  // "Pricing|Free trial" -> ["Pricing", "Free trial"]. Plain text only (rendered with textContent).
+  function parseQuickReplies(value) {
+    if (typeof value !== "string") return [];
+    var out = [];
+    var parts = value.split("|");
+    for (var i = 0; i < parts.length && out.length < QUICK_REPLY_MAX; i++) {
+      var label = sanitizeText(parts[i].replace(/\n/g, " "), QUICK_REPLY_MAX_LENGTH);
+      if (label && out.indexOf(label) === -1) out.push(label);
+    }
+    return out;
+  }
+
+  // Digits only, 8-15 of them (international format without "+"), or "" if it isn't a phone number.
+  function sanitizeWhatsAppNumber(value) {
+    var digits = typeof value === "string" ? value.replace(/[^0-9]/g, "") : "";
+    return digits.length >= 8 && digits.length <= 15 ? digits : "";
+  }
+
   var AGENT_NAME = cfg.agentName || "Chat";
   var WELCOME_MESSAGE = sanitizeText(cfg.welcomeMessage, WELCOME_MAX_LENGTH) || DEFAULT_WELCOME_MESSAGE;
   var PRIMARY_COLOR = sanitizeColor(cfg.brandColor) || sanitizeColor(cfg.primaryColor) || DEFAULT_COLOR;
@@ -99,13 +127,14 @@
   var LAUNCHER_IMAGE_URL = sanitizeHttpsUrl(cfg.launcherImageUrl);
   var LAUNCHER_WIDTH = parseLauncherWidth(cfg.launcherWidth);
   var POSITION = cfg.position === "bottom-left" ? "bottom-left" : "bottom-right";
+  var QUICK_REPLIES = parseQuickReplies(cfg.quickReplies);
   var REQUEST_TIMEOUT_MS = 60000;
 
   var configError = "";
   if (!API_KEY) configError = "Missing data-api-key on the widget script tag.";
   else if (!ENDPOINT) configError = "Missing data-endpoint (or data-api-base + data-agent-slug) on the widget script tag.";
   if (configError) {
-    console.error("[fagoon-widget] " + configError);
+    console.error("[spirit-monkey-widget] " + configError);
   }
 
   var ERROR_MESSAGES = {
@@ -127,7 +156,9 @@
   // Every storage access is guarded: localStorage can be missing or throw (private
   // mode, blocked third-party storage, sandboxed iframes) and the widget must still work.
   var CONVERSATION_TTL_MS = 24 * 60 * 60 * 1000;
-  var STORAGE_KEY = "fagoon-widget:conversation:" + ENDPOINT;
+  var STORAGE_KEY = "spirit-monkey-widget:conversation:" + ENDPOINT;
+  // Key used by earlier versions; still read so a conversation in progress survives the update.
+  var LEGACY_STORAGE_KEY = "fagoon-widget:conversation:" + ENDPOINT;
 
   function getStorage() {
     try {
@@ -141,11 +172,12 @@
     try {
       var storage = getStorage();
       if (!storage) return null;
-      var saved = JSON.parse(storage.getItem(STORAGE_KEY) || "null");
+      var saved = JSON.parse(storage.getItem(STORAGE_KEY) || storage.getItem(LEGACY_STORAGE_KEY) || "null");
       if (saved && typeof saved.id === "string" && typeof saved.expiresAt === "number" && saved.expiresAt > Date.now()) {
         return saved.id;
       }
       storage.removeItem(STORAGE_KEY);
+      storage.removeItem(LEGACY_STORAGE_KEY);
     } catch (e) {}
     return null;
   }
@@ -161,7 +193,10 @@
     conversationId = null;
     try {
       var storage = getStorage();
-      if (storage) storage.removeItem(STORAGE_KEY);
+      if (storage) {
+        storage.removeItem(STORAGE_KEY);
+        storage.removeItem(LEGACY_STORAGE_KEY);
+      }
     } catch (e) {}
   }
 
@@ -169,13 +204,13 @@
   var inFlight = false;
 
   var host = document.createElement("div");
-  host.id = "fagoon-widget-host";
+  host.id = "spirit-monkey-widget-host";
   var shadow = host.attachShadow({ mode: "open" });
 
   var style = document.createElement("style");
   style.textContent =
     ":host{all:initial}" +
-    "*{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}" +
+    "*{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Nirmala UI','Noto Sans Devanagari',Roboto,Helvetica,Arial,sans-serif}" +
     ".fw-root{position:fixed;" + (POSITION === "bottom-left" ? "left:20px" : "right:20px") + ";bottom:20px;z-index:2147483000}" +
     ".fw-bubble{width:60px;height:60px;border-radius:50%;background:" + PRIMARY_COLOR + ";border:none;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;color:#fff;transition:transform .15s ease}" +
     ".fw-bubble:hover{transform:scale(1.06)}" +
@@ -194,6 +229,16 @@
     ".fw-msg-bot{align-self:flex-start;background:#fff;color:#1f2937;border:1px solid #e5e7eb;border-bottom-left-radius:3px}" +
     ".fw-msg-bot ul,.fw-msg-bot ol{margin:4px 0;padding-left:18px}" +
     ".fw-msg-bot li{margin:2px 0}" +
+    ".fw-msg-bot a{color:" + PRIMARY_COLOR + ";text-decoration:underline;word-break:break-word}" +
+    ".fw-chips{align-self:flex-start;display:flex;flex-wrap:wrap;gap:6px;max-width:100%}" +
+    ".fw-chip{background:#fff;color:" + PRIMARY_COLOR + ";border:1px solid " + PRIMARY_COLOR + ";border-radius:999px;padding:6px 12px;font-size:13px;line-height:1.2;cursor:pointer;transition:background .15s ease,color .15s ease}" +
+    ".fw-chip:hover,.fw-chip:focus-visible{background:" + PRIMARY_COLOR + ";color:#fff;outline:none}" +
+    ".fw-handoff{flex:0 0 auto;display:none;padding:8px 10px 0 10px;background:#fff;border-top:1px solid #e5e7eb}" +
+    ".fw-handoff.fw-show{display:block}" +
+    ".fw-handoff.fw-show + .fw-input-row{border-top:none}" +
+    ".fw-whatsapp{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:7px 10px;border-radius:10px;background:#e7f8ee;color:#0b6b3a;border:1px solid #bfe8d0;font-size:13px;font-weight:600;text-decoration:none;cursor:pointer}" +
+    ".fw-whatsapp:hover,.fw-whatsapp:focus-visible{background:#d5f2e2;outline:none}" +
+    ".fw-whatsapp svg{width:15px;height:15px;flex:0 0 auto}" +
     ".fw-msg-error{align-self:flex-start;background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;border-bottom-left-radius:3px}" +
     ".fw-msg-typing{align-self:flex-start;background:#fff;border:1px solid #e5e7eb;border-bottom-left-radius:3px;padding:11px 14px;display:flex;gap:4px}" +
     ".fw-dot{width:6px;height:6px;border-radius:50%;background:#9ca3af;animation:fw-blink 1.2s infinite ease-in-out}" +
@@ -205,6 +250,16 @@
     ".fw-send{background:" + PRIMARY_COLOR + ";border:none;color:#fff;border-radius:10px;width:38px;height:38px;flex:0 0 auto;cursor:pointer;display:flex;align-items:center;justify-content:center}" +
     ".fw-send:disabled{opacity:.5;cursor:not-allowed}" +
     ".fw-send svg{width:17px;height:17px}" +
+    // Phones: the chat fills the screen (dvh follows the on-screen keyboard), and 16px inputs stop iOS zooming in.
+    "@media (max-width:480px){" +
+    ".fw-panel.fw-open{position:fixed;top:0;left:0;right:0;bottom:0!important;width:100%;max-width:none;height:100%;height:100dvh;max-height:none!important;border-radius:0;z-index:1}" +
+    ".fw-header{padding:16px}" +
+    ".fw-close{font-size:26px;padding:4px 8px}" +
+    ".fw-msg{max-width:88%;font-size:15px}" +
+    ".fw-input{font-size:16px}" +
+    ".fw-chip{font-size:14px;padding:8px 14px}" +
+    "}" +
+    "@media (prefers-reduced-motion:reduce){.fw-dot{animation:none;opacity:.6}.fw-bubble,.fw-chip{transition:none}}" +
     (LAUNCHER_IMAGE_URL
       ? // Image launcher: the client's image as-is — no circle, background or shadow.
         ".fw-bubble.fw-launcher-image{width:var(--fw-launcher-width);height:auto;padding:0;border-radius:0;background:transparent;box-shadow:none;display:block;line-height:0;transition:transform .15s ease}" +
@@ -275,8 +330,23 @@
   inputRow.appendChild(input);
   inputRow.appendChild(sendBtn);
 
+  // "Chat on WhatsApp" row, hidden until the API says the owner has a WhatsApp number.
+  var handoffRow = document.createElement("div");
+  handoffRow.className = "fw-handoff";
+  var whatsappLink = document.createElement("a");
+  whatsappLink.className = "fw-whatsapp";
+  whatsappLink.target = "_blank";
+  whatsappLink.rel = "noopener noreferrer";
+  whatsappLink.innerHTML =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>';
+  var whatsappLabel = document.createElement("span");
+  whatsappLabel.textContent = "Chat on WhatsApp";
+  whatsappLink.appendChild(whatsappLabel);
+  handoffRow.appendChild(whatsappLink);
+
   panel.appendChild(header);
   panel.appendChild(messages);
+  panel.appendChild(handoffRow);
   panel.appendChild(inputRow);
 
   // Optional image launcher. Stays the same <button> (focus, aria-label, click
@@ -339,7 +409,7 @@
   // just what LLM responses commonly use: **bold**, "- "/"* " bullet lists,
   // "1. " numbered lists, and line breaks. Not a full Markdown parser.
   function formatMessage(text) {
-    var lines = escapeHtml(text).split("\n");
+    var lines = escapeHtml(String(text).replace(/\u0000/g, "")).split("\n");
     var parts = [];
     var listType = null;
     var listItems = [];
@@ -352,14 +422,45 @@
       }
     }
 
+    // Links. The text is already HTML-escaped, and only http(s) URLs become links, so a reply
+    // can never produce a javascript: link or break out of the href attribute.
+    function anchor(url, label) {
+      var href = /^https?:\/\//i.test(url) ? url : "https://" + url;
+      return '<a href="' + href + '" target="_blank" rel="noopener noreferrer nofollow">' + label + "</a>";
+    }
+
     function inline(line) {
-      return line.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+      var held = [];
+      function hold(html) {
+        held.push(html);
+        return "\u0000" + (held.length - 1) + "\u0000";
+      }
+      // [label](https://example.com)
+      line = line.replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g, function (m, label, url) {
+        return hold(anchor(url, label));
+      });
+      // Bare https://example.com or www.example.com (trailing punctuation stays outside the link).
+      line = line.replace(/\b(?:https?:\/\/|www\.)[^\s<]+/gi, function (url) {
+        var tail = "";
+        var trimmed = /^(.*?)((?:&quot;|&#39;|&gt;|&lt;|[.,;:!?)\]*])+)$/.exec(url);
+        if (trimmed) {
+          url = trimmed[1];
+          tail = trimmed[2];
+        }
+        if (!/^(?:https?:\/\/)?[^\s/]+\.[^\s/]{2,}/i.test(url)) return url + tail;
+        return hold(anchor(url, url)) + tail;
+      });
+      line = line.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+      return line.replace(/\u0000(\d+)\u0000/g, function (m, index) {
+        return held[+index];
+      });
     }
 
     for (var i = 0; i < lines.length; i++) {
       var line = lines[i];
       var bulletMatch = line.match(/^\s*[*-]\s+(.+)/);
       var numberedMatch = line.match(/^\s*\d+\.\s+(.+)/);
+      var headingMatch = line.match(/^\s*#{1,6}\s+(.+)/);
 
       if (bulletMatch) {
         if (listType !== "ul") { flushList(); listType = "ul"; }
@@ -367,6 +468,9 @@
       } else if (numberedMatch) {
         if (listType !== "ol") { flushList(); listType = "ol"; }
         listItems.push("<li>" + inline(numberedMatch[1]) + "</li>");
+      } else if (headingMatch) {
+        flushList();
+        parts.push("<strong>" + inline(headingMatch[1]) + "</strong>");
       } else {
         flushList();
         parts.push(inline(line));
@@ -395,10 +499,56 @@
   function addTypingIndicator() {
     var el = document.createElement("div");
     el.className = "fw-msg-typing";
+    el.setAttribute("role", "status");
+    el.setAttribute("aria-label", AGENT_NAME + " is typing");
     el.innerHTML = '<span class="fw-dot"></span><span class="fw-dot"></span><span class="fw-dot"></span>';
     messages.appendChild(el);
     messages.scrollTop = messages.scrollHeight;
     return el;
+  }
+
+  // Quick-reply buttons under the welcome message; they disappear once the visitor sends anything.
+  var chipsEl = null;
+  function removeQuickReplies() {
+    if (chipsEl) {
+      chipsEl.remove();
+      chipsEl = null;
+    }
+  }
+  function addQuickReplies() {
+    if (!QUICK_REPLIES.length || chipsEl) return;
+    chipsEl = document.createElement("div");
+    chipsEl.className = "fw-chips";
+    QUICK_REPLIES.forEach(function (label) {
+      var chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "fw-chip";
+      chip.textContent = label;
+      chip.addEventListener("click", function () {
+        sendMessage(label);
+      });
+      chipsEl.appendChild(chip);
+    });
+    messages.appendChild(chipsEl);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  // WhatsApp handoff: the link carries the visitor's latest question so they don't retype it.
+  var lastVisitorMessage = "";
+  var WHATSAPP_QUESTION_MAX = 300;
+  function showWhatsApp(number) {
+    var digits = sanitizeWhatsAppNumber(number);
+    if (!digits) {
+      handoffRow.classList.remove("fw-show");
+      return;
+    }
+    var question = sanitizeText(lastVisitorMessage, WHATSAPP_QUESTION_MAX);
+    var text = question
+      ? "Hi, I was chatting with " + AGENT_NAME + " on your website. My question: " + question
+      : "Hi, I was chatting with " + AGENT_NAME + " on your website and would like to talk to someone.";
+    whatsappLink.href = "https://wa.me/" + digits + "?text=" + encodeURIComponent(text);
+    handoffRow.classList.add("fw-show");
+    messages.scrollTop = messages.scrollHeight;
   }
 
   function setBusy(busy) {
@@ -429,6 +579,8 @@
       return;
     }
 
+    removeQuickReplies();
+    lastVisitorMessage = text;
     addMessage(text, "user");
     setBusy(true);
     var typingEl = addTypingIndicator();
@@ -477,6 +629,7 @@
           saveConversationId(conversationId);
         }
         addMessage((data && data.response) || "", "bot");
+        showWhatsApp(data && data.handoff && data.handoff.whatsapp);
       })
       .catch(function (err) {
         typingEl.remove();
@@ -526,7 +679,10 @@
     bubble.setAttribute("aria-label", "Close chat");
     if (!messages.childElementCount) {
       if (configError) addMessage(CONFIG_ERROR_MESSAGE, "error");
-      else addMessage(WELCOME_MESSAGE, "bot", true);
+      else {
+        addMessage(WELCOME_MESSAGE, "bot", true);
+        addQuickReplies();
+      }
     }
     input.focus();
   }
