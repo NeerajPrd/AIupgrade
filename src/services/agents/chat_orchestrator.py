@@ -225,6 +225,8 @@ class ChatOrchestrator:
         selected_tools = await analyze_and_select_tools(
             temp_history, web_search_enabled=web_search_enabled, user_id=user_id, allowed_tools=allowed_tools,
             use_llm=use_llm_routing,
+            # If the light routing model is rate-limited or down, route with the answering model.
+            fallback_llm_config=llm_service.config,
         )
         selected_tool = selected_tools[0] if selected_tools else "rag"
         # The analyzer is an LLM: never act on a tool this agent doesn't have enabled.

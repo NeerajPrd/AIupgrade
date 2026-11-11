@@ -90,9 +90,10 @@ def run_chat(monkeypatch):
         analyzer_calls = []
 
         # Ignores what it is offered and returns `analyzer_choice` anyway, like a misbehaving model.
-        async def fake_analyzer(history, web_search_enabled=False, user_id=None, allowed_tools=None, use_llm=True):
+        async def fake_analyzer(history, web_search_enabled=False, user_id=None, allowed_tools=None, use_llm=True,
+                                fallback_llm_config=None):
             analyzer_calls.append({"web_search_enabled": web_search_enabled, "allowed_tools": allowed_tools,
-                                   "use_llm": use_llm})
+                                   "use_llm": use_llm, "fallback_llm_config": fallback_llm_config})
             return [analyzer_choice]
 
         monkeypatch.setattr(orch_module, "analyze_and_select_tools", fake_analyzer)
@@ -133,6 +134,7 @@ def run_chat(monkeypatch):
             analyzer_web_search_flag=analyzer_calls[0]["web_search_enabled"],
             offered_tools=analyzer_calls[0]["allowed_tools"],
             used_llm_routing=analyzer_calls[0]["use_llm"],
+            routing_fallback=analyzer_calls[0]["fallback_llm_config"],
             saved=chat_service.saved,
         )
 

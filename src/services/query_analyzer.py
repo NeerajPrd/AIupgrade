@@ -134,6 +134,7 @@ async def analyze_and_select_tools(
         user_id: Optional[str] = None,
         allowed_tools: Optional[Iterable[str]] = None,
         use_llm: bool = True,
+        fallback_llm_config: Optional[BaseLLMConfig] = None,
 ) -> List[str]:
     """
     Uses a hybrid approach to intelligently determine which tools to activate.
@@ -142,6 +143,9 @@ async def analyze_and_select_tools(
     Only tools in `allowed_tools` are offered or returned (None = all tools).
     With `use_llm=False` only the free rule-based checks run and anything they
     don't recognise goes to RAG (no LLM call, so no rate-limit cost).
+    The LLM call uses the light model (LIGHT_LLM_MODEL). If that call fails (429, outage, unknown
+    model name) it is retried once on `fallback_llm_config` - the model that will write the answer -
+    or on the platform's smart model when none is given.
     """
     allowed = set(allowed_tools) if allowed_tools is not None else {t.value for t in ToolType}
     query = get_user_latest_query(history).lower().strip().rstrip('?')
@@ -204,6 +208,8 @@ async def analyze_and_select_tools(
     logger.info("No simple rules matched. Using LLM for tool analysis.")
     from src.core.settings import system_setting
 
+    light_provider = system_setting.LIGHT_LLM_PROVIDER or system_setting.FAST_MODEL_PROVIDER
+
     # Dynamically resolve user's key for the tool selection LLM
     api_key = None
     if user_id:
@@ -212,7 +218,7 @@ async def analyze_and_select_tools(
         try:
             resolved = await resolve_api_key(
                 user_id=uuid.UUID(str(user_id)),
-                provider=system_setting.FAST_MODEL_PROVIDER,
+                provider=light_provider,
                 feature="chat"
             )
             if resolved:
@@ -220,13 +226,13 @@ async def analyze_and_select_tools(
         except Exception as e:
             logger.error(f"Failed to resolve API key for tool analyzer LLM: {e}")
 
-    llm_service = LLMService(
-        BaseLLMConfig(
-            model=system_setting.FAST_MODEL_ID,
-            provider=system_setting.FAST_MODEL_PROVIDER,
-            api_key=api_key
+    light_config = BaseLLMConfig(model=system_setting.LIGHT_LLM_MODEL, provider=light_provider, api_key=api_key)
+    if fallback_llm_config is None:
+        fallback_llm_config = BaseLLMConfig(
+            model=system_setting.SMART_MODEL_ID,
+            provider=system_setting.SMART_MODEL_PROVIDER,
+            api_key=api_key if system_setting.SMART_MODEL_PROVIDER == light_provider else None,
         )
-    )
     try:
         system_prompt, user_query = build_prompt(
             template=SystemPrompt.TOOL_SELECTION,
@@ -235,9 +241,18 @@ async def analyze_and_select_tools(
             web_search_hint=web_search_enabled,
             allowed_tools=allowed,
         )
-        response = await llm_service.chat_completion(
-            user_query=user_query, system_prompt=system_prompt
-        )
+        try:
+            response = await LLMService(light_config).chat_completion(
+                user_query=user_query, system_prompt=system_prompt
+            )
+        except Exception as light_err:
+            logger.warning(
+                "Tool selection on the light model '{}' failed ({}); retrying on '{}'.",
+                light_config.model, type(light_err).__name__, fallback_llm_config.model,
+            )
+            response = await LLMService(fallback_llm_config).chat_completion(
+                user_query=user_query, system_prompt=system_prompt
+            )
 
         logger.debug("Tool selection LLM response: {}", response)
         cleaned_response = response.strip().replace("`", "")
