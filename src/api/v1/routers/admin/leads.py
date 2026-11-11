@@ -1,12 +1,13 @@
 """Admin-only lead capture settings and lead listing for published agents.
 
 GET   /api/v1/admin/agents/{agent_id}/lead-settings             - current notification settings
-PATCH /api/v1/admin/agents/{agent_id}/lead-settings             - set lead_notify_enabled / lead_notify_emails
+PATCH /api/v1/admin/agents/{agent_id}/lead-settings             - set lead_notify_enabled / lead_notify_emails / lead_whatsapp_number
 POST  /api/v1/admin/agents/{agent_id}/lead-settings/test-email  - send a sample lead email to the configured addresses
 GET   /api/v1/admin/agents/{agent_id}/leads?date_from=&date_to=  - leads, newest first (dates are Asia/Kathmandu, inclusive)
 
 Leads are captured from website-widget chats; see src/services/leads/service.py.
 """
+import re
 from datetime import date, datetime, timedelta, timezone
 from typing import List, Optional
 
@@ -29,12 +30,33 @@ router = APIRouter(prefix="/admin", tags=["Admin"], dependencies=[Depends(requir
 MAX_NOTIFY_EMAILS = 10
 
 
+def normalize_whatsapp_number(raw: Optional[str]) -> Optional[str]:
+    """'+977 984-1234567', '9841234567' or '9779841234567' -> '+9779841234567'. Blank -> None.
+
+    A bare Nepali mobile (97/98 + 8 digits) gets +977; anything else must already include its
+    country code. Raises ValueError for a number WhatsApp could not open.
+    """
+    if raw is None or not raw.strip():
+        return None
+    if not re.fullmatch(r"\+?[\d\s().\-]+", raw.strip()):
+        raise ValueError("Use digits only, e.g. +9779841234567")
+    digits = re.sub(r"\D", "", raw)
+    if digits.startswith("00"):
+        digits = digits[2:]
+    if re.fullmatch(r"9[78]\d{8}", digits):
+        digits = "977" + digits
+    if not 10 <= len(digits) <= 15 or digits.startswith("0"):
+        raise ValueError("Include the country code, e.g. +9779841234567")
+    return "+" + digits
+
+
 def _settings(agent) -> dict:
     return {
         "agent_id": str(agent.id),
         "agent_name": agent.name,
         "lead_notify_enabled": bool(agent.lead_notify_enabled),
         "lead_notify_emails": list(agent.lead_notify_emails or []),
+        "lead_whatsapp_number": agent.lead_whatsapp_number,
         "smtp_configured": system_setting.smtp_configured,
     }
 
@@ -70,6 +92,8 @@ class LeadSettingsUpdate(BaseModel):
     # Only fields present in the request body are changed.
     lead_notify_enabled: Optional[bool] = None
     lead_notify_emails: Optional[List[EmailStr]] = Field(default=None, max_length=MAX_NOTIFY_EMAILS)
+    # The client's WhatsApp number; send null or "" to clear it.
+    lead_whatsapp_number: Optional[str] = Field(default=None, max_length=32)
 
 
 @router.patch("/agents/{agent_id}/lead-settings", operation_id="admin_set_agent_lead_settings")
@@ -89,6 +113,12 @@ async def set_lead_settings(agent_id: str, body: LeadSettingsUpdate, db: AsyncSe
         enabled = body.lead_notify_enabled
     if enabled and not emails:
         raise HTTPException(status_code=422, detail="Add at least one address in lead_notify_emails to enable notifications")
+
+    if "lead_whatsapp_number" in fields:
+        try:
+            agent.lead_whatsapp_number = normalize_whatsapp_number(body.lead_whatsapp_number)
+        except ValueError as err:
+            raise HTTPException(status_code=422, detail=f"lead_whatsapp_number: {err}")
 
     agent.lead_notify_emails = emails
     agent.lead_notify_enabled = enabled
@@ -117,7 +147,7 @@ async def send_test_lead_email(agent_id: str, db: AsyncSession = Depends(get_db)
     }
     transcript = [
         {"role": "user", "content": "नमस्ते! तपाईंको chatbot को मूल्य कति हो?", "created_at": now - timedelta(minutes=2)},
-        {"role": "assistant", "content": "Namaste! Plans start from NPR 7,500 per month. Shall I arrange a free 1-month trial?", "created_at": now - timedelta(minutes=1)},
+        {"role": "assistant", "content": "Namaste! Plans start from NPR 7,500 for 6 months. Shall I arrange a free 1-month trial?", "created_at": now - timedelta(minutes=1)},
         {"role": "user", "content": "हो, मेरो नम्बर 9800000000 हो। म सीता, Himalayan Treks बाट।", "created_at": now},
     ]
     html = build_html(sample, transcript, agent_name=agent.name, captured_at=now, updated=False)

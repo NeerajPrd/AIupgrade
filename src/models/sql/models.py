@@ -77,6 +77,8 @@ class Agent(Base):
     # Email the client when a widget visitor leaves contact details (see src/services/leads).
     lead_notify_enabled: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     lead_notify_emails: Mapped[List[str]] = mapped_column(JSONB, default=list, server_default="[]")
+    # The client's own WhatsApp number in international form (e.g. +9779841234567); NULL = not set.
+    lead_whatsapp_number: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 

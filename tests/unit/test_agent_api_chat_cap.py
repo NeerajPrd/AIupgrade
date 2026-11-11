@@ -112,6 +112,12 @@ def test_null_cap_is_unlimited_and_skips_counting(setup):
     assert setup.state.count_calls == []
 
 
+def test_widget_chat_asks_for_knowledge_base_only_routing(setup):
+    # Lets the orchestrator skip the tool-selection LLM call (see ChatOrchestrator.stream_chat).
+    setup.post({"message": "hi"})
+    assert setup.app.state.chat_orchestrator.calls[0]["knowledge_base_only"] is True
+
+
 def test_new_conversation_is_tagged_agent_api(setup):
     setup.post({"message": "hi"})
     assert setup.app.state.agent_chat_service.created[0]["source"] == "agent_api"

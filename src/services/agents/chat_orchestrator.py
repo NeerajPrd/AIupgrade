@@ -147,7 +147,8 @@ class ChatOrchestrator:
         http_client = None,
         crawl_service = None,
         file_data: Optional[str] = None,
-        file_name: Optional[str] = None
+        file_name: Optional[str] = None,
+        knowledge_base_only: bool = False,
     ) -> AsyncGenerator[str, None]:
         # 1. Get Agent
         agent = await self.agent_manager.get_agent(agent_id)
@@ -215,8 +216,15 @@ class ChatOrchestrator:
         allowed_tools = allowed_tools_for_agent(agent_tools, web_search_enabled=agent_web_search_flag)
         web_search_enabled = ToolType.WEB_SEARCH.value in allowed_tools
 
+        # The tool-selection LLM call only matters when it could pick web search or image
+        # generation. A knowledge-base-only caller (the website widget) whose agent has neither
+        # enabled would just get "rag" or "general" back, so skip that call: it halves the LLM
+        # requests per message, and answering from the knowledge base is the safer of the two.
+        routable_tools = {ToolType.WEB_SEARCH.value, ToolType.IMAGE_GENERATION.value}
+        use_llm_routing = not knowledge_base_only or bool(routable_tools & set(allowed_tools))
         selected_tools = await analyze_and_select_tools(
-            temp_history, web_search_enabled=web_search_enabled, user_id=user_id, allowed_tools=allowed_tools
+            temp_history, web_search_enabled=web_search_enabled, user_id=user_id, allowed_tools=allowed_tools,
+            use_llm=use_llm_routing,
         )
         selected_tool = selected_tools[0] if selected_tools else "rag"
         # The analyzer is an LLM: never act on a tool this agent doesn't have enabled.
