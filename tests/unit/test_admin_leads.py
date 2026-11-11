@@ -39,7 +39,8 @@ def _lead(agent_id):
 @pytest.fixture
 def setup():
     agent = SimpleNamespace(id=uuid.uuid4(), name="Spirit Monkey Assistant",
-                            lead_notify_enabled=False, lead_notify_emails=[])
+                            lead_notify_enabled=False, lead_notify_emails=[],
+                            lead_whatsapp_number=None)
     db = FakeDB(agent, [_lead(agent.id)])
 
     app = FastAPI()
@@ -148,3 +149,33 @@ def test_test_email_sends_sample(setup, monkeypatch):
     assert r.status_code == 200
     assert sent[0][0] == ["owner@client.com"]
     assert sent[0][1].startswith("[TEST] New lead from your website chat")
+
+
+@pytest.mark.parametrize("raw, stored", [
+    ("9841234567", "+9779841234567"),
+    ("+977 984-1234567", "+9779841234567"),
+    ("009779841234567", "+9779841234567"),
+    ("+86 138 0013 8000", "+8613800138000"),
+])
+def test_whatsapp_number_is_normalised(setup, raw, stored):
+    r = setup.client.patch(_settings_url(setup.agent.id), json={"lead_whatsapp_number": raw}, headers=ADMIN)
+    assert r.status_code == 200
+    assert setup.agent.lead_whatsapp_number == stored
+    assert r.json()["lead_whatsapp_number"] == stored
+
+
+@pytest.mark.parametrize("raw", ["call me", "12345", "014123456", "98412345678901234567"])
+def test_bad_whatsapp_number_is_rejected(setup, raw):
+    r = setup.client.patch(_settings_url(setup.agent.id), json={"lead_whatsapp_number": raw}, headers=ADMIN)
+    assert r.status_code == 422
+    assert setup.agent.lead_whatsapp_number is None
+
+
+def test_whatsapp_number_can_be_cleared_and_is_untouched_when_omitted(setup):
+    setup.agent.lead_whatsapp_number = "+9779841234567"
+    r = setup.client.patch(_settings_url(setup.agent.id), json={"lead_notify_emails": ["a@b.com"]}, headers=ADMIN)
+    assert r.status_code == 200
+    assert setup.agent.lead_whatsapp_number == "+9779841234567"
+    r = setup.client.patch(_settings_url(setup.agent.id), json={"lead_whatsapp_number": ""}, headers=ADMIN)
+    assert r.status_code == 200
+    assert setup.agent.lead_whatsapp_number is None

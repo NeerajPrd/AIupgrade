@@ -339,6 +339,7 @@ async def chat_via_agent_api(
             crawl_service=getattr(request.app.state, "crawl_service", None),
             file_data=body.file_data,
             file_name=body.file_name,
+            knowledge_base_only=True,
         ):
             full_response += token
         return full_response

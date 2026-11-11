@@ -133,12 +133,15 @@ async def analyze_and_select_tools(
         web_search_enabled: bool = False,
         user_id: Optional[str] = None,
         allowed_tools: Optional[Iterable[str]] = None,
+        use_llm: bool = True,
 ) -> List[str]:
     """
     Uses a hybrid approach to intelligently determine which tools to activate.
     - Rule-based checks are used for simple, general queries to bypass the LLM.
     - An LLM is used for all other complex queries.
     Only tools in `allowed_tools` are offered or returned (None = all tools).
+    With `use_llm=False` only the free rule-based checks run and anything they
+    don't recognise goes to RAG (no LLM call, so no rate-limit cost).
     """
     allowed = set(allowed_tools) if allowed_tools is not None else {t.value for t in ToolType}
     query = get_user_latest_query(history).lower().strip().rstrip('?')
@@ -192,6 +195,10 @@ async def analyze_and_select_tools(
             return [ToolType.WEB_SEARCH.value]
     else:
         logger.debug("Skipping Rule 2 checks because web search toggle is turned OFF.")
+
+    if not use_llm:
+        logger.info("No simple rules matched and LLM routing is off. Selecting 'rag' tool.")
+        return [ToolType.RAG.value]
 
     # Fallback: Use LLM for more complex queries that don't match simple rules.
     logger.info("No simple rules matched. Using LLM for tool analysis.")

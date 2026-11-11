@@ -86,12 +86,13 @@ def run_chat(monkeypatch):
     monkeypatch.setattr(embeddings, "get_embedding_service", no_embeddings)
     monkeypatch.setattr(resolver, "resolve_api_key", no_key)
 
-    async def go(agent_tools, analyzer_choice):
+    async def go(agent_tools, analyzer_choice, knowledge_base_only=False):
         analyzer_calls = []
 
         # Ignores what it is offered and returns `analyzer_choice` anyway, like a misbehaving model.
-        async def fake_analyzer(history, web_search_enabled=False, user_id=None, allowed_tools=None):
-            analyzer_calls.append({"web_search_enabled": web_search_enabled, "allowed_tools": allowed_tools})
+        async def fake_analyzer(history, web_search_enabled=False, user_id=None, allowed_tools=None, use_llm=True):
+            analyzer_calls.append({"web_search_enabled": web_search_enabled, "allowed_tools": allowed_tools,
+                                   "use_llm": use_llm})
             return [analyzer_choice]
 
         monkeypatch.setattr(orch_module, "analyze_and_select_tools", fake_analyzer)
@@ -121,6 +122,7 @@ def run_chat(monkeypatch):
             # The public agent API always passes both, so the web search route is reachable.
             http_client=object(),
             crawl_service=object(),
+            knowledge_base_only=knowledge_base_only,
         ):
             tokens.append(token)
 
@@ -130,6 +132,7 @@ def run_chat(monkeypatch):
             rag_calls=len(rag_calls),
             analyzer_web_search_flag=analyzer_calls[0]["web_search_enabled"],
             offered_tools=analyzer_calls[0]["allowed_tools"],
+            used_llm_routing=analyzer_calls[0]["use_llm"],
             saved=chat_service.saved,
         )
 
@@ -266,3 +269,38 @@ async def test_analyzer_default_keeps_old_behaviour(fake_tool_llm):
     # No allowed_tools given (Upgrade chat): the image shortcut still fires as before.
     tools = await qa.analyze_and_select_tools([{"role": "user", "content": "draw a picture of chai"}])
     assert tools == ["image_generation"]
+
+
+# --- Website-widget chats skip the tool-selection LLM call when it cannot change the route ---
+
+async def test_widget_chat_skips_routing_llm_when_agent_has_no_tools(run_chat):
+    result = await run_chat([], "rag", knowledge_base_only=True)
+    assert result.used_llm_routing is False
+    assert result.rag_calls == 1
+
+
+@pytest.mark.parametrize("tools", [["web_search"], ["image_generation"]])
+async def test_widget_chat_keeps_routing_llm_when_agent_has_a_routable_tool(run_chat, tools):
+    result = await run_chat(tools, "rag", knowledge_base_only=True)
+    assert result.used_llm_routing is True
+
+
+async def test_dashboard_chat_keeps_routing_llm(run_chat):
+    result = await run_chat([], "rag")
+    assert result.used_llm_routing is True
+
+
+async def test_analyzer_without_llm_makes_no_llm_call(fake_tool_llm):
+    fake_tool_llm.reply = '["general"]'
+    allowed = qa.allowed_tools_for_agent([])
+    tools = await qa.analyze_and_select_tools(
+        [{"role": "user", "content": QUESTION}], allowed_tools=allowed, use_llm=False
+    )
+    assert tools == ["rag"]
+    assert fake_tool_llm.prompts == []
+    # Free rule-based shortcuts still apply: a plain greeting needs no knowledge-base lookup.
+    tools = await qa.analyze_and_select_tools(
+        [{"role": "user", "content": "Hello"}], allowed_tools=allowed, use_llm=False
+    )
+    assert tools == ["general"]
+    assert fake_tool_llm.prompts == []
