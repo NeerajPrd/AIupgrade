@@ -12,7 +12,8 @@
   var params = new URLSearchParams(location.search);
   var caseName = params.get("case");
   var ENDPOINT = "https://api.test/api/v1/agent-api/demo/chat";
-  var KEY = "fagoon-widget:conversation:" + ENDPOINT;
+  var KEY = "spirit-monkey-widget:conversation:" + ENDPOINT;
+  var LEGACY_KEY = "fagoon-widget:conversation:" + ENDPOINT;
   var DAY = 24 * 60 * 60 * 1000;
   var requests = [];
   var responses = [];
@@ -38,7 +39,7 @@
     return new Promise(function (resolve) { s.onload = function () { tick().then(resolve); }; document.body.appendChild(s); });
   }
 
-  function root() { return document.getElementById("fagoon-widget-host").shadowRoot; }
+  function root() { return document.getElementById("spirit-monkey-widget-host").shadowRoot; }
   function q(sel) { return root().querySelector(sel); }
   function open() { q(".fw-bubble").click(); }
   function messages() { return Array.prototype.slice.call(root().querySelectorAll(".fw-msg")); }
@@ -316,6 +317,149 @@
         check("nothing requested", requestedImages.length === 0, requestedImages.join(","));
       });
     },
+    legacy_storage_key_still_restores: function () {
+      localStorage.setItem(LEGACY_KEY, JSON.stringify({ id: "conv-legacy", expiresAt: Date.now() + 60000 }));
+      return inject({}).then(function () { open(); return send("hi"); }).then(function () {
+        check("legacy id sent", requests[0].body.conversation_id === "conv-legacy", JSON.stringify(requests[0].body));
+        localStorage.removeItem(LEGACY_KEY);
+      });
+    },
+    quick_replies_shown_and_send: function () {
+      return inject({ "data-quick-replies": "Pricing| Free trial |<b>Talk</b> to a human|Pricing||Four|Five" }).then(function () {
+        open();
+        var chips = Array.prototype.slice.call(root().querySelectorAll(".fw-chip"));
+        var labels = chips.map(function (c) { return c.textContent; });
+        check("max 4 chips, trimmed, no duplicates or blanks", labels.join("/") === "Pricing/Free trial/<b>Talk</b> to a human/Four", labels.join("/"));
+        check("chip text is never HTML", !root().querySelector(".fw-chip b"));
+        check("chips sit after the welcome message", q(".fw-chips").previousElementSibling === messages()[0]);
+        chips[1].click();
+        return tick(60);
+      }).then(function () {
+        check("clicking a chip sends it", requests.length === 1 && requests[0].body.message === "Free trial", JSON.stringify(requests[0] && requests[0].body));
+        check("chips removed after first message", !q(".fw-chips"));
+        check("visitor bubble shows the chip text", messages()[1].textContent === "Free trial");
+      });
+    },
+    quick_replies_absent_by_default: function () {
+      return inject({}).then(function () {
+        open();
+        check("no chips without the attribute", !q(".fw-chips"));
+      });
+    },
+    quick_replies_removed_when_typing: function () {
+      return inject({ "data-quick-replies": "Pricing|Free trial" }).then(function () { open(); return send("hello"); }).then(function () {
+        check("chips removed after a typed message", !q(".fw-chips"));
+      });
+    },
+    whatsapp_button_hidden_until_number_arrives: function () {
+      return inject({}).then(function () {
+        open();
+        check("hidden at first", getComputedStyle(q(".fw-handoff")).display === "none");
+        return send("hello");
+      }).then(function () {
+        check("still hidden when the reply has no number", getComputedStyle(q(".fw-handoff")).display === "none");
+      });
+    },
+    whatsapp_button_prefills_question: function () {
+      responses.push({ status: 200, body: { success: true, conversation_id: "conv-1", response: "ok", handoff: { whatsapp: "9779841234567" } } });
+      return inject({}).then(function () { open(); return send("fee kati ho? & can I pay by eSewa"); }).then(function () {
+        var link = q(".fw-whatsapp");
+        check("button visible", getComputedStyle(q(".fw-handoff")).display === "block");
+        check("label", link.textContent === "Chat on WhatsApp", link.textContent);
+        var url = new URL(link.href);
+        check("opens wa.me with the number", url.origin + url.pathname === "https://wa.me/9779841234567", link.href);
+        var text = url.searchParams.get("text");
+        check("question pre-filled", text === "Hi, I was chatting with Demo on your website. My question: fee kati ho? & can I pay by eSewa", text);
+        check("opens in a new tab safely", link.target === "_blank" && /noopener/.test(link.rel));
+      });
+    },
+    whatsapp_bad_number_ignored: function () {
+      responses.push({ status: 200, body: { success: true, conversation_id: "conv-1", response: "ok", handoff: { whatsapp: "javascript:alert(1)" } } });
+      return inject({}).then(function () { open(); return send("hi"); }).then(function () {
+        check("no button for a non-number", getComputedStyle(q(".fw-handoff")).display === "none");
+        check("no href set", !q(".fw-whatsapp").getAttribute("href"));
+      });
+    },
+    typing_indicator_while_waiting: function () {
+      var release;
+      var realFetch = window.fetch;
+      window.fetch = function (url, opts) {
+        return new Promise(function (resolve) { release = function () { resolve(realFetch(url, opts)); }; });
+      };
+      return inject({}).then(function () {
+        open();
+        q(".fw-input").value = "hello";
+        q(".fw-send").click();
+        return tick(30);
+      }).then(function () {
+        var typing = q(".fw-msg-typing");
+        check("typing dots shown while waiting", typing && typing.querySelectorAll(".fw-dot").length === 3);
+        check("typing indicator is announced", typing && typing.getAttribute("aria-label") === "Demo is typing");
+        check("input disabled while waiting", q(".fw-input").disabled && q(".fw-send").disabled);
+        release();
+        return tick(80);
+      }).then(function () {
+        check("typing dots removed after the reply", !q(".fw-msg-typing"));
+        check("reply shown", lastMessage().textContent === "ok");
+        check("input enabled again", !q(".fw-input").disabled);
+      });
+    },
+    reply_formatting_is_safe: function () {
+      var reply = [
+        "**Plans** are <b>simple</b> <img src=x onerror=alert(1)>",
+        "- Standard",
+        "- Growth",
+        "1. First",
+        "See www.skillsquare.com.np. Or [our site](https://spirit-monkey.com/pricing?a=1&b=2), also https://example.com/x).",
+        // Split so this page's own script block isn't closed by the test data.
+        "[bad](javascript:alert(1)) and <scr" + "ipt>alert(2)</scr" + "ipt>",
+        "### Heading",
+      ].join("\n");
+      responses.push({ status: 200, body: { success: true, conversation_id: "conv-1", response: reply } });
+      return inject({}).then(function () { open(); return send("hi"); }).then(function () {
+        var m = lastMessage();
+        var links = Array.prototype.slice.call(m.querySelectorAll("a"));
+        var hrefs = links.map(function (a) { return a.getAttribute("href"); });
+        check("bold rendered", m.querySelector("strong") && m.querySelector("strong").textContent === "Plans");
+        check("bullet list rendered", m.querySelectorAll("ul li").length === 2);
+        check("numbered list rendered", m.querySelectorAll("ol li").length === 1);
+        check("raw HTML stays text", !m.querySelector("b") && !m.querySelector("img") && !m.querySelector("script"));
+        check("three links", hrefs.length === 3, hrefs.join(" | "));
+        check("www link gets https and drops the full stop", hrefs[0] === "https://www.skillsquare.com.np", hrefs[0]);
+        check("markdown link keeps its label and query", links[1] && links[1].textContent === "our site" && hrefs[1] === "https://spirit-monkey.com/pricing?a=1&b=2", hrefs[1]);
+        check("bare link drops trailing punctuation", hrefs[2] === "https://example.com/x", hrefs[2]);
+        check("only http(s) links", hrefs.every(function (h) { return /^https:\/\//.test(h); }), hrefs.join(" | "));
+        check("javascript: link stays plain text", m.textContent.indexOf("[bad](javascript:alert(1))") !== -1);
+        check("links open in a new tab safely", links.every(function (a) { return a.target === "_blank" && /noopener/.test(a.rel); }));
+        check("heading shown bold without hashes", m.textContent.indexOf("###") === -1 && m.innerHTML.indexOf("<strong>Heading</strong>") !== -1);
+      });
+    },
+    welcome_message_never_rendered_as_html: function () {
+      return inject({ "data-welcome-message": "**Hi** <a href='https://x.com'>x</a> https://example.com" }).then(function () {
+        open();
+        check("welcome stays plain text", !messages()[0].querySelector("a") && !messages()[0].querySelector("strong"));
+      });
+    },
+    phone_chat_fills_the_screen: function () {
+      return inject({ "data-quick-replies": "Pricing" }).then(function () {
+        open();
+        var r = q(".fw-panel").getBoundingClientRect();
+        check("panel spans the full width", Math.round(r.left) === 0 && Math.round(r.width) === window.innerWidth, r.left + " " + r.width + " vs " + window.innerWidth);
+        check("panel spans the full height", Math.round(r.top) === 0 && Math.abs(r.height - window.innerHeight) <= 1, r.top + " " + r.height + " vs " + window.innerHeight);
+        check("16px input (no iOS zoom)", getComputedStyle(q(".fw-input")).fontSize === "16px", getComputedStyle(q(".fw-input")).fontSize);
+        check("close button reachable", q(".fw-close").getBoundingClientRect().right <= window.innerWidth);
+        q(".fw-close").click();
+        check("close button closes the chat", !q(".fw-panel").classList.contains("fw-open"));
+        check("launcher visible again", q(".fw-bubble").getBoundingClientRect().width > 0);
+      });
+    },
+    desktop_panel_unchanged: function () {
+      return inject({}).then(function () {
+        open();
+        var st = getComputedStyle(q(".fw-panel"));
+        check("340px floating panel on desktop", st.width === "340px" && st.position === "absolute", st.width + " " + st.position);
+      });
+    },
     storage_blocked: function () {
       var blocked = false;
       try {
@@ -337,7 +481,7 @@
 
   if (params.get("list")) { parent.postMessage({ list: Object.keys(cases) }, "*"); return; }
   if (!cases[caseName]) { check("unknown case", false, caseName); done(); return; }
-  try { localStorage.removeItem(KEY); } catch (e) {}
+  try { localStorage.removeItem(KEY); localStorage.removeItem(LEGACY_KEY); } catch (e) {}
   Promise.resolve().then(cases[caseName]).catch(function (e) { check("threw", false, e && e.stack || e); }).then(done);
 })();
 </script>

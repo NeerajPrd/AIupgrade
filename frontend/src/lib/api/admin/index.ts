@@ -104,3 +104,30 @@ export const downloadMonthlyConversations = async (agentId: string, month: strin
   );
   saveBlob(response.data, filenameFrom(response.headers["content-disposition"], `conversations_${month}.docx`));
 };
+
+export interface LeadSettings {
+  agent_id: string;
+  agent_name: string;
+  lead_notify_enabled: boolean;
+  lead_notify_emails: string[];
+  lead_whatsapp_number: string | null;
+  smtp_configured: boolean;
+}
+
+export const getLeadSettings = async (agentId: string): Promise<LeadSettings> => {
+  const response = await axiosInstance.get(`/api/v1/admin/agents/${agentId}/lead-settings`);
+  return response.data;
+};
+
+export const saveLeadSettings = async (
+  agentId: string,
+  settings: Pick<LeadSettings, "lead_notify_enabled" | "lead_notify_emails" | "lead_whatsapp_number">
+): Promise<LeadSettings> => {
+  const response = await axiosInstance.patch(`/api/v1/admin/agents/${agentId}/lead-settings`, settings);
+  return response.data;
+};
+
+export const sendTestLeadEmail = async (agentId: string): Promise<{ sent: boolean; recipients: string[] }> => {
+  const response = await axiosInstance.post(`/api/v1/admin/agents/${agentId}/lead-settings/test-email`);
+  return response.data;
+};

@@ -367,9 +367,14 @@ async def chat_via_agent_api(
             process_lead_in_background, postgres_manager, str(agent.id), conversation_id, body.message
         )
 
-    return {
+    result = {
         "success": True,
         "conversation_id": conversation_id,
         "response": full_response,
         "usage": {"duration_ms": duration_ms},
     }
+    # The widget shows a "Chat on WhatsApp" button when the owner has a number set (digits only, as wa.me expects).
+    whatsapp = "".join(ch for ch in (getattr(agent, "lead_whatsapp_number", None) or "") if ch.isdigit())
+    if whatsapp:
+        result["handoff"] = {"whatsapp": whatsapp}
+    return result
