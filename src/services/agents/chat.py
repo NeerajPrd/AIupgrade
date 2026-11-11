@@ -70,6 +70,8 @@ class AgentChatService:
                     "id": str(h.id),
                     "agent_id": str(h.agent_id),
                     "title": h.title,
+                    "source": h.source,
+                    "created_at": h.created_at.isoformat(),
                     "updated_at": h.updated_at.isoformat()
                 } for h in histories
             ]
@@ -86,8 +88,13 @@ class AgentChatService:
                 return True
         return False
 
-    async def list_conversations_for_export(self, agent_id: str, start: datetime, end: datetime) -> List[Dict[str, Any]]:
-        """All conversations (with full message bodies) for an agent within [start, end)."""
+    async def list_conversations_for_export(
+        self, agent_id: str, start: datetime, end: datetime, source: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        """All conversations (with full message bodies) for an agent within [start, end).
+
+        `source` limits the result to one origin, e.g. 'agent_api' for website-widget chats only.
+        """
         async with self.postgres_manager.get_session() as session:
             stmt = (
                 select(AgentChatHistory)
@@ -99,6 +106,8 @@ class AgentChatService:
                 )
                 .order_by(AgentChatHistory.created_at.asc())
             )
+            if source is not None:
+                stmt = stmt.where(AgentChatHistory.source == source)
             histories = (await session.execute(stmt)).scalars().all()
 
             conversations = []

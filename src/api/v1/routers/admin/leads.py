@@ -4,14 +4,17 @@ GET   /api/v1/admin/agents/{agent_id}/lead-settings             - current notifi
 PATCH /api/v1/admin/agents/{agent_id}/lead-settings             - set lead_notify_enabled / lead_notify_emails / lead_whatsapp_number
 POST  /api/v1/admin/agents/{agent_id}/lead-settings/test-email  - send a sample lead email to the configured addresses
 GET   /api/v1/admin/agents/{agent_id}/leads?date_from=&date_to=  - leads, newest first (dates are Asia/Kathmandu, inclusive)
+GET   /api/v1/admin/agents/{agent_id}/leads/export.csv           - the same leads as a spreadsheet
 
 Leads are captured from website-widget chats; see src/services/leads/service.py.
 """
+import csv
+import io
 import re
 from datetime import date, datetime, timedelta, timezone
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,7 +24,7 @@ from src.api.v1.routers.database.db_switch import require_admin
 from src.core.database import get_db
 from src.core.settings import system_setting
 from src.models.sql.lead import Lead
-from src.services.agents.conversation_usage import start_of_day_kathmandu
+from src.services.agents.conversation_usage import KATHMANDU_TZ, start_of_day_kathmandu, today_kathmandu
 from src.services.leads import service as lead_service
 from src.services.leads.email_template import build_html, build_subject
 
@@ -158,6 +161,74 @@ async def send_test_lead_email(agent_id: str, db: AsyncSession = Depends(get_db)
     return {"sent": True, "recipients": recipients}
 
 
+async def _find_leads(db: AsyncSession, agent, date_from: Optional[date], date_to: Optional[date], limit: int):
+    """The agent's leads, newest first, between two Asia/Kathmandu days (both inclusive, both optional)."""
+    if date_from and date_to and date_to < date_from:
+        raise HTTPException(status_code=422, detail="date_to is before date_from")
+    conditions = [Lead.agent_id == agent.id]
+    if date_from:
+        conditions.append(Lead.created_at >= start_of_day_kathmandu(date_from))
+    if date_to:
+        conditions.append(Lead.created_at < start_of_day_kathmandu(date_to + timedelta(days=1)))
+    result = await db.execute(select(Lead).where(*conditions).order_by(Lead.created_at.desc()).limit(limit))
+    return result.scalars().all()
+
+
+CSV_COLUMNS = ["Date (Nepal time)", "Name", "Business", "Phone", "Email", "Interested in", "Language",
+               "Alert email", "Conversation ID"]
+
+
+def _csv_cell(value: Optional[str], phone: bool = False) -> str:
+    """Spreadsheet-safe text: nothing a visitor typed may run as a formula when the file is opened."""
+    text = "" if value is None else str(value)
+    if phone and text:
+        # A leading tab keeps Excel from turning +9779841234567 into 9.77984E+12 or dropping a leading 0.
+        return "\t" + text
+    if text[:1] in ("=", "+", "-", "@", "\t", "\r"):
+        return "'" + text
+    return text
+
+
+def leads_to_csv(leads) -> str:
+    buffer = io.StringIO()
+    writer = csv.writer(buffer, lineterminator="\r\n")
+    writer.writerow(CSV_COLUMNS)
+    for lead in leads:
+        created = lead.created_at
+        if created is not None and created.tzinfo is None:
+            created = created.replace(tzinfo=timezone.utc)
+        writer.writerow([
+            created.astimezone(KATHMANDU_TZ).strftime("%Y-%m-%d %H:%M") if created else "",
+            _csv_cell(lead.name),
+            _csv_cell(lead.business_name),
+            _csv_cell(lead.phone, phone=True),
+            _csv_cell(lead.email),
+            _csv_cell(lead.interest),
+            _csv_cell(lead.language),
+            _csv_cell(lead.notify_status or "not sent"),
+            str(lead.history_id),
+        ])
+    return buffer.getvalue()
+
+
+@router.get("/agents/{agent_id}/leads/export.csv", operation_id="admin_export_agent_leads_csv")
+async def export_agent_leads_csv(
+    agent_id: str,
+    date_from: Optional[date] = Query(default=None, description="First day (Asia/Kathmandu), inclusive"),
+    date_to: Optional[date] = Query(default=None, description="Last day (Asia/Kathmandu), inclusive"),
+    db: AsyncSession = Depends(get_db),
+):
+    """The same leads as the list endpoint, as a CSV that opens correctly in Excel (UTF-8 with BOM)."""
+    agent = await _get_agent(db, agent_id)
+    leads = await _find_leads(db, agent, date_from, date_to, limit=10000)
+    filename = f"leads_{date_from or 'start'}_to_{date_to or today_kathmandu()}.csv"
+    return Response(
+        content=("﻿" + leads_to_csv(leads)).encode("utf-8"),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
 @router.get("/agents/{agent_id}/leads", operation_id="admin_list_agent_leads")
 async def list_agent_leads(
     agent_id: str,
@@ -167,16 +238,7 @@ async def list_agent_leads(
     db: AsyncSession = Depends(get_db),
 ):
     agent = await _get_agent(db, agent_id)
-    if date_from and date_to and date_to < date_from:
-        raise HTTPException(status_code=422, detail="date_to is before date_from")
-
-    conditions = [Lead.agent_id == agent.id]
-    if date_from:
-        conditions.append(Lead.created_at >= start_of_day_kathmandu(date_from))
-    if date_to:
-        conditions.append(Lead.created_at < start_of_day_kathmandu(date_to + timedelta(days=1)))
-    result = await db.execute(select(Lead).where(*conditions).order_by(Lead.created_at.desc()).limit(limit))
-    leads = [_lead_out(lead) for lead in result.scalars().all()]
+    leads = [_lead_out(lead) for lead in await _find_leads(db, agent, date_from, date_to, limit)]
     return {
         "agent_id": str(agent.id),
         "agent_name": agent.name,

@@ -21,6 +21,7 @@ from src.schemas.agent_enums import ToolType
 from src.schemas.llm import BaseLLMConfig
 from src.schemas.common import SuccessResponse, FailureResponse, ConversationRoleEnum
 from src.services.agents.chat import AgentChatService
+from src.services.agents.conversation_usage import SOURCE_AGENT_API
 from src.services.agents.export import build_conversations_docx
 from src.services.nosql.postgres_services import PostgresServices
 from src.core.database import get_db
@@ -76,8 +77,16 @@ async def create_chat(
 @chat_router.get("/{agent_id}/conversations", operation_id="get_all_chat_history")
 async def get_all_conversations_list(
         request: Request,
-        agent_id: str
+        agent_id: str,
+        source: Optional[str] = None,
 ):
+    """`source=website` lists only website-widget conversations, `source=dashboard` only chats
+    started inside the dashboard (e.g. the owner's own test chats). Omit for both."""
+    if source not in (None, "website", "dashboard"):
+        return JSONResponse(
+            content=FailureResponse(status="fail", message="source must be 'website' or 'dashboard'").model_dump(),
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
     try:
         chat_service = request.app.state.agent_chat_service
         user_id = request.state.user_id
@@ -93,6 +102,11 @@ async def get_all_conversations_list(
             chat_id = chat_dict.get("id")
             
             if not chat_id:
+                continue
+
+            is_website = chat_dict.get("source") == SOURCE_AGENT_API
+            chat_dict["is_website"] = is_website
+            if source is not None and is_website != (source == "website"):
                 continue
 
             # Fetch the actual messages for this conversation

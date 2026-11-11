@@ -40,6 +40,7 @@ from src.api.v1.routers.whatsapp import whatsapp_router
 from src.api.v1.routers.database import db_switch
 from src.api.v1.routers.admin import agent_usage as admin_agent_usage
 from src.api.v1.routers.admin import leads as admin_leads
+from src.api.v1.routers.admin import reports as admin_reports
 
 
 def setup_and_combine_all_routers() -> APIRouter:
@@ -198,5 +199,7 @@ def setup_and_combine_all_routers() -> APIRouter:
     router.include_router(admin_agent_usage.router)
     # Admin-only lead capture settings and lead lists
     router.include_router(admin_leads.router)
+    # Admin-only monthly client report (also emailed automatically each month)
+    router.include_router(admin_reports.router)
 
     return router

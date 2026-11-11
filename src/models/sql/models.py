@@ -239,3 +239,4 @@ from src.models.sql.vibe_coder_models import VibeCodeExecution, UserLLMConfigDB
 # Import Agent API model so Alembic can find it via Base metadata
 from src.models.sql.agent_api import AgentAPI
 from src.models.sql.lead import Lead
+from src.models.sql.monthly_report import AgentMonthlyReport

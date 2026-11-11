@@ -9,7 +9,7 @@ import { IoMdLogOut } from "react-icons/io";
 import { FiChevronRight, FiMenu, FiSettings } from "react-icons/fi";
 import { LuWorkflow } from "react-icons/lu";
 import { FaCode } from "react-icons/fa6";
-import { TbDatabaseCog } from "react-icons/tb";
+import { TbDatabaseCog, TbUsers } from "react-icons/tb";
 
 import { HumanizeTimestamp } from "@/utils/data/date";
 import { showErrorToast } from "@/utils/toast";
@@ -134,6 +134,10 @@ const Sidebar = () => {
       label: "Manage Models",
       route: "/manage-models",
     },
+    // Admin only: leads captured by website chats, and the monthly client report.
+    ...(["admin", "superadmin"].includes(user?.role)
+      ? [{ icon: TbUsers, label: "Leads", route: "/admin/leads" }]
+      : []),
   ];
 
   if (!isMounted) return null;
