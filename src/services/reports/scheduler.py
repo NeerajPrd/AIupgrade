@@ -155,12 +155,17 @@ class SqlReportStore:
 
 async def generate_for_agent(postgres_manager, agent, period: str) -> MonthlyReport:
     """Load the month's data and build the report, with one LLM call on the platform's fast model."""
+    from src.core.settings import system_setting
     from src.services.leads.extraction import default_llm_call
     from src.services.reports.monthly import build_report, load_report_data
 
     async with postgres_manager.get_session() as session:
         conversations, leads = await load_report_data(session, agent.id, period)
-    return await build_report(agent.name, period, conversations, leads, default_llm_call(agent.user_id, agent.id))
+    # Grouping a month of multilingual questions is harder than routing: keep it on the fast model.
+    llm_call = default_llm_call(
+        agent.user_id, agent.id, model=system_setting.FAST_MODEL_ID, provider=system_setting.FAST_MODEL_PROVIDER
+    )
+    return await build_report(agent.name, period, conversations, leads, llm_call)
 
 
 async def monthly_report_loop(postgres_manager) -> None:

@@ -73,8 +73,15 @@ async def extract_lead_fields(transcript: List[Dict[str, str]], llm_call: LLMCal
     return parse_extraction(raw)
 
 
-def default_llm_call(owner_user_id: uuid.UUID, agent_id: uuid.UUID) -> LLMCall:
-    """Non-streaming call on the platform's fast model, using the agent owner's own key if configured."""
+def default_llm_call(
+    owner_user_id: uuid.UUID, agent_id: uuid.UUID, model: Optional[str] = None, provider: Optional[str] = None
+) -> LLMCall:
+    """Non-streaming call, using the agent owner's own key if configured.
+
+    Defaults to the light model (LIGHT_LLM_MODEL): lead extraction is a small, structured task.
+    There is no second model here on purpose - if the call fails, the caller falls back to the
+    regex matches, which costs nothing and never loses the lead.
+    """
 
     async def _call(messages: List[Dict[str, str]]) -> str:
         from src.core.settings import system_setting
@@ -82,18 +89,18 @@ def default_llm_call(owner_user_id: uuid.UUID, agent_id: uuid.UUID) -> LLMCall:
         from src.services.api_key_resolver import resolve_api_key
         from src.services.llm import LLMService
 
-        provider = system_setting.FAST_MODEL_PROVIDER
+        llm_provider = provider or system_setting.LIGHT_LLM_PROVIDER or system_setting.FAST_MODEL_PROVIDER
         api_key = None
         try:
             api_key = await resolve_api_key(
-                user_id=owner_user_id, provider=provider, feature="agents", specific_id=str(agent_id)
+                user_id=owner_user_id, provider=llm_provider, feature="agents", specific_id=str(agent_id)
             )
         except Exception:
             api_key = None
         service = LLMService(
             BaseLLMConfig(
-                model=system_setting.FAST_MODEL_ID,
-                provider=provider,
+                model=model or system_setting.LIGHT_LLM_MODEL,
+                provider=llm_provider,
                 # No max_tokens: on Gemini 2.5 thinking tokens count toward it and can leave the reply empty.
                 temperature=0.0,
                 api_key=api_key,

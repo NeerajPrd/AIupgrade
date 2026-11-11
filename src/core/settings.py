@@ -201,6 +201,12 @@ class Settings(BaseSettings):
     FAST_MODEL_PROVIDER: str = "gemini"
     FAST_MODEL_ID: str = "gemini-2.5-flash"
 
+    # Small, cheap model for helper calls that are not the customer-facing answer: choosing a
+    # tool for a message and extracting lead details. Change it in .env without a rebuild.
+    # LIGHT_LLM_PROVIDER empty = same provider as FAST_MODEL_PROVIDER.
+    LIGHT_LLM_MODEL: str = "gemini-flash-lite-latest"
+    LIGHT_LLM_PROVIDER: str = ""
+
     SMART_MODEL_PROVIDER: str = "gemini"
     SMART_MODEL_ID: str = "gemini-flash-latest"
 
