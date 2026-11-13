@@ -34,7 +34,9 @@ class GeminiImagenDiffusion(BaseDiffusion):
             elif width > height:
                 aspect_ratio = "16:9"
 
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key={self.api_key}"
+        # The key goes in a header, never in the URL (URLs end up in logs and error messages).
+        url = "https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict"
+        headers = {"x-goog-api-key": self.api_key}
         
         payload = {
             "instances": [
@@ -47,7 +49,7 @@ class GeminiImagenDiffusion(BaseDiffusion):
         }
         
         async with httpx.AsyncClient(timeout=60.0) as client:
-            response = await client.post(url, json=payload)
+            response = await client.post(url, json=payload, headers=headers)
             response.raise_for_status()
             
             data = response.json()
