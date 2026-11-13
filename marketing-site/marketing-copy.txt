@@ -17,8 +17,8 @@ Slow replies cost sales and trust. Our chatbots respond instantly with accurate 
 📈 Built to Convert, Not Just Chat
 This isn't a generic FAQ bot. Every conversation is designed to move leads forward — answering objections, capturing interest, and guiding visitors toward a sale.
 
-⚡ Live on Your Website in Minutes
-No developers, no complicated setup. We configure your AI agent with your business details, and you paste one line of code onto your site — you're live the same day.
+⚡ Live on Your Website in 2 Days
+No developers, no complicated setup. We configure your AI agent with your business details, and you paste one line of code onto your site. A typical chatbot goes live 2 days after sign-up.
 
 Optional closing line before Contact section:
 "Built for small and medium businesses who want enterprise-level customer engagement — without the enterprise price tag or complexity."
