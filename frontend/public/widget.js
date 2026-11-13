@@ -30,6 +30,17 @@
  * assistant), the chat API returns it with each reply and a small button appears that opens
  * wa.me with the visitor's last question pre-filled. Nothing to configure on the page.
  *
+ * "Powered by Spirit Monkey": a small link at the bottom of the chat. It cannot be switched off
+ * from the page; a Spirit Monkey admin can hide it per assistant (server-side setting).
+ *
+ * Page API (available once this script has loaded; safe to call any time after that):
+ *   window.SpiritMonkeyChat.open()       open the chat panel
+ *   window.SpiritMonkeyChat.close()      close it
+ *   window.SpiritMonkeyChat.send(text)   open the chat and send `text` as the visitor's message
+ *                                        (plain text, max 500 characters). Returns false if the
+ *                                        text is empty or a reply is still being awaited.
+ * Example:  <button onclick="SpiritMonkeyChat.send('fee kati ho?')">Ask about fees</button>
+ *
  * The conversation id is kept in localStorage for 24 hours from when the
  * conversation started, so a page reload continues the same conversation.
  * If storage is blocked the widget still works, just without that memory.
@@ -129,6 +140,10 @@
   var POSITION = cfg.position === "bottom-left" ? "bottom-left" : "bottom-right";
   var QUICK_REPLIES = parseQuickReplies(cfg.quickReplies);
   var REQUEST_TIMEOUT_MS = 60000;
+  // Settings the server decides per assistant (branding line, WhatsApp number): .../chat -> .../config
+  var CONFIG_ENDPOINT = /\/chat\/?$/.test(ENDPOINT) ? ENDPOINT.replace(/\/chat\/?$/, "/config") : "";
+  var CONFIG_TIMEOUT_MS = 8000;
+  var PAGE_SEND_MAX_LENGTH = 500;
 
   var configError = "";
   if (!API_KEY) configError = "Missing data-api-key on the widget script tag.";
@@ -239,6 +254,11 @@
     ".fw-whatsapp{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:7px 10px;border-radius:10px;background:#e7f8ee;color:#0b6b3a;border:1px solid #bfe8d0;font-size:13px;font-weight:600;text-decoration:none;cursor:pointer}" +
     ".fw-whatsapp:hover,.fw-whatsapp:focus-visible{background:#d5f2e2;outline:none}" +
     ".fw-whatsapp svg{width:15px;height:15px;flex:0 0 auto}" +
+    ".fw-powered{flex:0 0 auto;display:none;padding:0 10px 7px 10px;background:#fff;text-align:center;font-size:11px;line-height:1.2;color:#9ca3af}" +
+    ".fw-powered.fw-show{display:block}" +
+    ".fw-powered a{color:#6b7280;text-decoration:none;font-weight:600}" +
+    ".fw-powered a:hover,.fw-powered a:focus-visible{color:#374151;text-decoration:underline;outline:none}" +
+    ".fw-input-row.fw-has-powered{padding-bottom:6px}" +
     ".fw-msg-error{align-self:flex-start;background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;border-bottom-left-radius:3px}" +
     ".fw-msg-typing{align-self:flex-start;background:#fff;border:1px solid #e5e7eb;border-bottom-left-radius:3px;padding:11px 14px;display:flex;gap:4px}" +
     ".fw-dot{width:6px;height:6px;border-radius:50%;background:#9ca3af;animation:fw-blink 1.2s infinite ease-in-out}" +
@@ -348,6 +368,34 @@
   panel.appendChild(messages);
   panel.appendChild(handoffRow);
   panel.appendChild(inputRow);
+
+  // "Powered by Spirit Monkey". Shown unless the server says this assistant hides it; there is
+  // deliberately no data attribute for it. The campaign tag tells us which client site sent the visitor.
+  var poweredRow = document.createElement("div");
+  poweredRow.className = "fw-powered";
+  var poweredLink = document.createElement("a");
+  poweredLink.target = "_blank";
+  poweredLink.rel = "noopener";
+  poweredLink.textContent = "Spirit Monkey";
+  var clientHost = "";
+  try {
+    clientHost = String(window.location.hostname || "").toLowerCase().slice(0, 100);
+  } catch (e) {}
+  poweredLink.href =
+    "https://spirit-monkey.com/?utm_source=widget&utm_medium=referral&utm_campaign=" + encodeURIComponent(clientHost || "unknown");
+  poweredRow.appendChild(document.createTextNode("Powered by "));
+  poweredRow.appendChild(poweredLink);
+  panel.appendChild(poweredRow);
+
+  function setBranding(visible) {
+    if (visible) {
+      poweredRow.classList.add("fw-show");
+      inputRow.classList.add("fw-has-powered");
+    } else {
+      poweredRow.classList.remove("fw-show");
+      inputRow.classList.remove("fw-has-powered");
+    }
+  }
 
   // Optional image launcher. Stays the same <button> (focus, aria-label, click
   // handling), only its contents and styling change.
@@ -536,12 +584,14 @@
   // WhatsApp handoff: the link carries the visitor's latest question so they don't retype it.
   var lastVisitorMessage = "";
   var WHATSAPP_QUESTION_MAX = 300;
+  var knownWhatsApp = ""; // last valid number the server gave us (from the config call or a reply)
   function showWhatsApp(number) {
-    var digits = sanitizeWhatsAppNumber(number);
+    var digits = sanitizeWhatsAppNumber(number) || knownWhatsApp;
     if (!digits) {
       handoffRow.classList.remove("fw-show");
       return;
     }
+    knownWhatsApp = digits;
     var question = sanitizeText(lastVisitorMessage, WHATSAPP_QUESTION_MAX);
     var text = question
       ? "Hi, I was chatting with " + AGENT_NAME + " on your website. My question: " + question
@@ -549,6 +599,48 @@
     whatsappLink.href = "https://wa.me/" + digits + "?text=" + encodeURIComponent(text);
     handoffRow.classList.add("fw-show");
     messages.scrollTop = messages.scrollHeight;
+  }
+
+  // Ask the server for this assistant's settings the first time the chat opens. The branding
+  // line stays hidden only until the answer arrives (so it never flashes on a site that hides it);
+  // if the request fails or times out, the line is shown.
+  var configRequested = false;
+  function loadServerConfig() {
+    if (configRequested) return;
+    configRequested = true;
+    if (configError || !CONFIG_ENDPOINT || typeof fetch !== "function") {
+      setBranding(true);
+      return;
+    }
+    var settled = false;
+    var timer = setTimeout(function () {
+      if (!settled) {
+        settled = true;
+        setBranding(true);
+      }
+    }, CONFIG_TIMEOUT_MS);
+    fetch(CONFIG_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-API-Key": API_KEY },
+      body: "{}",
+    })
+      .then(function (response) {
+        if (!response.ok) throw new Error("config " + response.status);
+        return response.json();
+      })
+      .then(function (data) {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        setBranding(!(data && data.hide_branding === true));
+        if (data && data.whatsapp) showWhatsApp(data.whatsapp);
+      })
+      .catch(function () {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        setBranding(true);
+      });
   }
 
   function setBusy(busy) {
@@ -677,6 +769,7 @@
     positionPanel();
     panel.classList.add("fw-open");
     bubble.setAttribute("aria-label", "Close chat");
+    loadServerConfig();
     if (!messages.childElementCount) {
       if (configError) addMessage(CONFIG_ERROR_MESSAGE, "error");
       else {
@@ -696,6 +789,28 @@
     else openPanel();
   });
   closeBtn.addEventListener("click", closePanel);
+
+  // Page API (see the header comment). Only these three functions are exposed; text passed to
+  // send() is treated exactly like something the visitor typed (plain text, never HTML).
+  var pageApi = {
+    open: function () {
+      if (!opened) openPanel();
+    },
+    close: function () {
+      if (opened) closePanel();
+    },
+    send: function (text) {
+      var clean = sanitizeText(typeof text === "string" ? text : "", PAGE_SEND_MAX_LENGTH);
+      if (!clean) return false;
+      if (!opened) openPanel();
+      if (inFlight) return false;
+      sendMessage(clean);
+      return true;
+    },
+  };
+  try {
+    window.SpiritMonkeyChat = pageApi;
+  } catch (e) {}
 
   function mount() {
     document.body.appendChild(host);

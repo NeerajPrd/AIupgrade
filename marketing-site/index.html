@@ -50,6 +50,7 @@
   .btn-primary:hover{opacity:.94;box-shadow:0 12px 28px -6px rgba(139,92,246,.55);}
   .btn-ghost{background:#fff;color:var(--text);border-color:var(--border-strong);}
   .btn-ghost:hover{background:#f5f5f7;}
+  .btn .wa-icon{width:18px;height:18px;flex:0 0 auto;color:#25d366;}
 
   /* Header */
   header{
@@ -88,6 +89,15 @@
   h1 .grad{background:var(--gradient);-webkit-background-clip:text;background-clip:text;color:transparent;}
   .hero p.sub{font-size:19px;color:var(--text-dim);max-width:620px;margin:0 auto 40px;}
   .hero-ctas{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+  /* Primary button on its own row; "Talk to Us" and "Chat on WhatsApp" side by side below it */
+  .hero-ctas .cta-break{flex-basis:100%;height:0;}
+  .hero-note{margin-top:18px;font-size:14.5px;color:var(--text-dim);font-weight:500;}
+  /* Phones: full-width stacked buttons so long labels never clip or crowd each other */
+  @media (max-width:520px){
+    .hero-ctas{flex-direction:column;align-items:stretch;}
+    .hero-ctas .cta-break{display:none;}
+    .hero-ctas .btn{width:100%;white-space:normal;text-align:center;}
+  }
   /* Hero two-column layout: text left, animated chat demo right; stacks below 900px */
   .hero-grid{max-width:1160px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:48px;align-items:center;}
   .hero-visual{min-width:0;}
@@ -136,10 +146,20 @@
   }
   .demo-panel h3{font-size:22px;font-weight:700;margin-bottom:10px;}
   .demo-panel p{color:var(--text-dim);font-size:15px;margin-bottom:24px;}
+  .demo-panel p.try-label{margin-bottom:12px;font-weight:600;color:var(--text);}
+  .try-examples{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;}
+  .try-example{
+    font:inherit;font-size:14.5px;font-weight:600;color:var(--accent-text);background:#fff;cursor:pointer;
+    border:1px solid var(--border-strong);border-radius:980px;padding:10px 18px;
+    transition:transform .15s ease,background .15s ease,border-color .15s ease;
+  }
+  .try-example:hover,.try-example:focus-visible{background:#f5f5f7;border-color:var(--accent-text);transform:translateY(-1px);outline:none;}
 
   /* Contact */
-  .contact-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1000px;margin:0 auto;}
-  @media (max-width:800px){.contact-grid{grid-template-columns:1fr;}}
+  .contact-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;max-width:1160px;margin:0 auto;}
+  @media (max-width:1000px){.contact-grid{grid-template-columns:repeat(2,1fr);max-width:640px;}}
+  @media (max-width:560px){.contact-grid{grid-template-columns:1fr;}}
+  .contact-card .icon svg.wa-icon{stroke:none;color:#25d366;width:21px;height:21px;}
   .contact-card{
     background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
     padding:26px;display:flex;flex-direction:column;gap:10px;align-items:flex-start;
@@ -160,6 +180,9 @@
   .footer-brand img{height:24px;width:auto;}
   .footer-links{display:flex;gap:22px;font-size:13.5px;color:var(--text-dim);}
   .footer-links a:hover{color:var(--text);}
+
+  /* Keep the footer clear of the floating chat button on small screens (must come after the footer rules) */
+  @media (max-width:820px){footer{padding-bottom:96px !important;}}
 </style>
 </head>
 <body>
@@ -190,9 +213,12 @@
       <h1>Never Lose Another <span class="grad">Customer to Silence.</span></h1>
       <p class="sub">Spirit Monkey builds AI agents and chatbots that talk to your customers and leads around the clock — answering questions, resolving concerns, and closing sales while you focus on running your business.</p>
       <div class="hero-ctas">
-        <a href="#demo" class="btn btn-primary">See It In Action</a>
+        <a id="heroTrialBtn" href="#contact" target="_blank" rel="noopener" class="btn btn-primary">Start your free 1-month trial</a>
+        <span class="cta-break" aria-hidden="true"></span>
         <a href="#contact" class="btn btn-ghost">Talk to Us</a>
+        <a id="heroWhatsappBtn" href="#contact" target="_blank" rel="noopener" class="btn btn-ghost"><svg class="wa-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.66 15l-1.3 4.74 4.86-1.27A10 10 0 1 0 12 2zm0 1.8a8.2 8.2 0 1 1-4.18 15.26l-.3-.18-2.88.75.77-2.8-.2-.3A8.2 8.2 0 0 1 12 3.8z"/><path d="M8.6 7.3c-.2-.44-.4-.45-.6-.46h-.5a1 1 0 0 0-.7.33c-.25.27-.95.93-.95 2.26s.97 2.62 1.1 2.8c.14.18 1.88 3 4.64 4.08 2.3.9 2.76.72 3.26.68.5-.05 1.6-.66 1.83-1.3.23-.63.23-1.17.16-1.28-.07-.12-.25-.19-.52-.32-.27-.14-1.6-.8-1.85-.88-.25-.1-.43-.14-.6.13-.19.27-.7.88-.86 1.06-.16.18-.32.2-.59.07-.27-.14-1.14-.42-2.17-1.34-.8-.72-1.34-1.6-1.5-1.87-.16-.27-.02-.42.12-.55.12-.12.27-.32.4-.48.14-.16.19-.27.28-.45.09-.18.04-.34-.02-.48-.07-.13-.6-1.5-.83-2z"/></svg> Chat on WhatsApp</a>
       </div>
+      <p class="hero-note">No payment. Live on your website in 2 days.</p>
     </div>
     <div class="hero-visual">
       <!-- SPIRIT MONKEY HERO CHAT ANIMATION (from spirit-monkey-hero-chat.html). Self-contained, scoped under .smd -->
@@ -515,6 +541,12 @@
       </div>
       <h3>Try our AI Assistant</h3>
       <p>Click the chat bubble in the corner and ask our AI assistant anything about Spirit Monkey — pricing, setup, or how it works.</p>
+      <p class="try-label">Try it in Nepali — tap an example:</p>
+      <div class="try-examples">
+        <button type="button" class="try-example" data-chat-example="fee kati ho?">fee kati ho?</button>
+        <button type="button" class="try-example" data-chat-example="तपाईंको सेवा के के छ?" lang="ne">तपाईंको सेवा के के छ?</button>
+        <button type="button" class="try-example" data-chat-example="How much does it cost?">How much does it cost?</button>
+      </div>
     </div>
   </section>
 
@@ -541,6 +573,11 @@
         <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg></div>
         <div class="label">Email</div>
         <a class="value" id="contactEmail" href="#"></a>
+      </div>
+      <div class="contact-card">
+        <div class="icon"><svg class="wa-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.66 15l-1.3 4.74 4.86-1.27A10 10 0 1 0 12 2zm0 1.8a8.2 8.2 0 1 1-4.18 15.26l-.3-.18-2.88.75.77-2.8-.2-.3A8.2 8.2 0 0 1 12 3.8z"/><path d="M8.6 7.3c-.2-.44-.4-.45-.6-.46h-.5a1 1 0 0 0-.7.33c-.25.27-.95.93-.95 2.26s.97 2.62 1.1 2.8c.14.18 1.88 3 4.64 4.08 2.3.9 2.76.72 3.26.68.5-.05 1.6-.66 1.83-1.3.23-.63.23-1.17.16-1.28-.07-.12-.25-.19-.52-.32-.27-.14-1.6-.8-1.85-.88-.25-.1-.43-.14-.6.13-.19.27-.7.88-.86 1.06-.16.18-.32.2-.59.07-.27-.14-1.14-.42-2.17-1.34-.8-.72-1.34-1.6-1.5-1.87-.16-.27-.02-.42.12-.55.12-.12.27-.32.4-.48.14-.16.19-.27.28-.45.09-.18.04-.34-.02-.48-.07-.13-.6-1.5-.83-2z"/></svg></div>
+        <div class="label">WhatsApp</div>
+        <a class="value" id="contactWhatsapp" href="#" target="_blank" rel="noopener">Chat on WhatsApp</a>
       </div>
     </div>
   </section>
@@ -572,6 +609,11 @@
       phoneHref: "+9779841135432",
       email: "spirit.monkeytech@gmail.com" // temporary inbox — swap here when the professional address is ready
     },
+    // Pre-filled WhatsApp messages. The number is contact.phoneHref above (WhatsApp is on the same number).
+    whatsapp: {
+      trialText: "Hi Spirit Monkey, I'd like to start the free 1-month chatbot trial for my business.",
+      questionText: "Hi Spirit Monkey, I have a question about your AI chatbot."
+    },
     links: {
       appUrl: "https://app.spirit-monkey.com" // the product / dashboard app
     }
@@ -586,6 +628,24 @@
   emailEl.textContent = SITE_CONFIG.contact.email;
   emailEl.href = "mailto:" + SITE_CONFIG.contact.email;
   document.getElementById("appLink").href = SITE_CONFIG.links.appUrl;
+
+  // ---- WhatsApp links (number comes from SITE_CONFIG; wa.me wants digits only) ----
+  const whatsappLink = text =>
+    "https://wa.me/" + SITE_CONFIG.contact.phoneHref.replace(/\D/g, "") + "?text=" + encodeURIComponent(text);
+  document.getElementById("heroTrialBtn").href = whatsappLink(SITE_CONFIG.whatsapp.trialText);
+  document.getElementById("heroWhatsappBtn").href = whatsappLink(SITE_CONFIG.whatsapp.questionText);
+  document.getElementById("contactWhatsapp").href = whatsappLink(SITE_CONFIG.whatsapp.questionText);
+
+  // ---- "Try it in Nepali" examples: open our chat widget and send the example ----
+  // The widget script loads async, so if it is not ready yet we retry briefly.
+  function sendToChat(text, attempt) {
+    const chat = window.SpiritMonkeyChat;
+    if (chat && typeof chat.send === "function") { chat.send(text); return; }
+    if ((attempt || 0) < 20) setTimeout(() => sendToChat(text, (attempt || 0) + 1), 250);
+  }
+  document.querySelectorAll("[data-chat-example]").forEach(btn =>
+    btn.addEventListener("click", () => sendToChat(btn.getAttribute("data-chat-example")))
+  );
   document.getElementById("year").textContent = new Date().getFullYear();
 
   // ---- mobile nav ----

@@ -101,7 +101,10 @@ def setup(monkeypatch):
     def post(body):
         return client.post(f"/api/v1/agent-api/{SLUG}/chat", json=body, headers={"X-API-Key": API_KEY})
 
-    return SimpleNamespace(app=app, agent=agent, state=state, post=post)
+    def config(key=API_KEY, slug=SLUG):
+        return client.post(f"/api/v1/agent-api/{slug}/config", json={}, headers={"X-API-Key": key})
+
+    return SimpleNamespace(app=app, agent=agent, api_record=api_record, state=state, post=post, config=config)
 
 
 def test_null_cap_is_unlimited_and_skips_counting(setup):
@@ -122,6 +125,33 @@ def test_reply_carries_whatsapp_handoff_only_when_number_is_set(setup):
     assert "handoff" not in setup.post({"message": "hi"}).json()
     setup.agent.lead_whatsapp_number = "+9779841234567"
     assert setup.post({"message": "hi"}).json()["handoff"] == {"whatsapp": "9779841234567"}
+
+
+def test_widget_config_defaults_to_showing_branding(setup):
+    r = setup.config()
+    assert r.status_code == 200
+    assert r.json() == {"hide_branding": False, "whatsapp": None}
+    # Reading the config is not a chat: nothing is created, counted or sent to the model.
+    assert setup.app.state.agent_chat_service.created == []
+    assert setup.app.state.chat_orchestrator.calls == []
+    assert setup.api_record.total_calls == 0
+
+
+def test_widget_config_reports_admin_settings(setup):
+    setup.agent.hide_branding = True
+    setup.agent.lead_whatsapp_number = "+9779841234567"
+    assert setup.config().json() == {"hide_branding": True, "whatsapp": "9779841234567"}
+
+
+def test_widget_config_needs_the_right_key_and_an_active_endpoint(setup):
+    assert setup.config(key="agapi_wrong").status_code == 401
+    setup.api_record.is_active = False
+    assert setup.config().status_code == 403
+
+
+def test_widget_config_is_rate_limited(setup):
+    setup.app.state.limiter.allow_result = False
+    assert setup.config().status_code == 429
 
 
 def test_new_conversation_is_tagged_agent_api(setup):

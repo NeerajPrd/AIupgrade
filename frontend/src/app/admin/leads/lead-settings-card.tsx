@@ -20,12 +20,13 @@ const errorText = (error: any, fallback: string) => {
   return fallback;
 };
 
-/** Who gets lead alerts and the monthly report for one assistant, and its WhatsApp handoff number. */
+/** Per-assistant admin settings: lead alerts and monthly report recipients, WhatsApp handoff number, widget branding. */
 export default function LeadSettingsCard({ agentId }: { agentId: string }) {
   const queryClient = useQueryClient();
   const [enabled, setEnabled] = useState(false);
   const [emails, setEmails] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
+  const [hideBranding, setHideBranding] = useState(false);
 
   const settings = useQuery({
     queryKey: ["admin", "lead-settings", agentId],
@@ -39,6 +40,7 @@ export default function LeadSettingsCard({ agentId }: { agentId: string }) {
     setEnabled(settings.data.lead_notify_enabled);
     setEmails(settings.data.lead_notify_emails.join(", "));
     setWhatsapp(settings.data.lead_whatsapp_number || "");
+    setHideBranding(!!settings.data.hide_branding);
   }, [settings.data]);
 
   const save = useMutation({
@@ -47,6 +49,7 @@ export default function LeadSettingsCard({ agentId }: { agentId: string }) {
         lead_notify_enabled: enabled,
         lead_notify_emails: emails.split(/[\s,;]+/).filter(Boolean),
         lead_whatsapp_number: whatsapp.trim(),
+        hide_branding: hideBranding,
       }),
     onSuccess: (data) => {
       queryClient.setQueryData(["admin", "lead-settings", agentId], data);
@@ -64,10 +67,10 @@ export default function LeadSettingsCard({ agentId }: { agentId: string }) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <h2 className="text-xl font-semibold">Alert settings</h2>
+        <h2 className="text-xl font-semibold">Assistant settings</h2>
         <p className="text-sm text-muted-foreground">
-          Where this assistant&apos;s lead alerts and monthly report are sent, and the WhatsApp number offered to
-          visitors.
+          Where this assistant&apos;s lead alerts and monthly report are sent, the WhatsApp number offered to
+          visitors, and the branding line in its chat widget.
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -95,6 +98,11 @@ export default function LeadSettingsCard({ agentId }: { agentId: string }) {
               Client WhatsApp number (shows a &quot;Chat on WhatsApp&quot; button in the chat; leave empty to hide it)
               <input type="tel" className={fieldClass} value={whatsapp} placeholder="+977 98XXXXXXXX"
                 onChange={(e) => setWhatsapp(e.target.value)} />
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" className="h-4 w-4" checked={hideBranding}
+                onChange={(e) => setHideBranding(e.target.checked)} />
+              Hide &quot;Powered by Spirit Monkey&quot; in this assistant&apos;s chat widget
             </label>
             <div className="flex flex-wrap gap-3">
               <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending}>

@@ -231,6 +231,56 @@ async def update_agent_api(
 # PUBLIC CHAT ENDPOINT (API key auth, no user session)
 # ============================================================
 
+async def _authenticated_api_record(db: AsyncSession, slug: str, api_key: str) -> AgentAPI:
+    """The active API record for `slug` if `api_key` is its key; otherwise the matching HTTP error."""
+    result = await db.execute(select(AgentAPI).where(AgentAPI.slug == slug))
+    api_record = result.scalar_one_or_none()
+    if not api_record:
+        raise HTTPException(status_code=404, detail="API endpoint not found")
+    if not api_record.is_active:
+        raise HTTPException(status_code=403, detail="This API endpoint is disabled")
+    if AgentAPI.hash_key(api_key) != api_record.api_key_hash:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+    return api_record
+
+
+def _whatsapp_digits(agent) -> str:
+    """The owner's WhatsApp number as wa.me expects it (digits only), or ''."""
+    return "".join(ch for ch in (getattr(agent, "lead_whatsapp_number", None) or "") if ch.isdigit())
+
+
+# Widget settings are read once per page view, so allow more of these than chat messages.
+CONFIG_RATE_LIMIT_PER_MINUTE = 240
+
+
+@router.post("/agent-api/{slug}/config", operation_id="agent_widget_config")
+async def widget_config(
+    slug: str,
+    request: Request,
+    x_api_key: str = Header(..., alias="X-API-Key"),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Settings the chat widget needs before the first message: whether to show the
+    "Powered by Spirit Monkey" line and the owner's WhatsApp number. Read-only and cheap
+    (no LLM call, not counted as a chat). POST only because that is what the public
+    agent-api CORS policy allows.
+    """
+    api_record = await _authenticated_api_record(db, slug, x_api_key)
+    allowed = await request.app.state.limiter.allow(
+        key=f"agent_api_config:{api_record.id}", limit=CONFIG_RATE_LIMIT_PER_MINUTE, window_s=60
+    )
+    if not allowed:
+        raise HTTPException(status_code=429, detail="Rate limit exceeded.", headers={"Retry-After": "60"})
+    agent = await db.get(Agent, api_record.agent_id)
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    return {
+        "hide_branding": bool(getattr(agent, "hide_branding", False)),
+        "whatsapp": _whatsapp_digits(agent) or None,
+    }
+
+
 class AgentApiChatRequest(BaseModel):
     message: str
     conversation_id: Optional[str] = None
@@ -260,20 +310,8 @@ async def chat_via_agent_api(
           -H "Content-Type: application/json" \\
           -d '{"message": "What does the document say about pricing?"}'
     """
-    # 1. Find API record by slug
-    result = await db.execute(select(AgentAPI).where(AgentAPI.slug == slug))
-    api_record = result.scalar_one_or_none()
-
-    if not api_record:
-        raise HTTPException(status_code=404, detail="API endpoint not found")
-
-    if not api_record.is_active:
-        raise HTTPException(status_code=403, detail="This API endpoint is disabled")
-
-    # 2. Validate API key
-    key_hash = AgentAPI.hash_key(x_api_key)
-    if key_hash != api_record.api_key_hash:
-        raise HTTPException(status_code=401, detail="Invalid API key")
+    # 1-2. Find the API record by slug and validate the API key
+    api_record = await _authenticated_api_record(db, slug, x_api_key)
 
     # 2b. Enforce this endpoint's own per-minute rate limit
     allowed = await request.app.state.limiter.allow(
@@ -374,7 +412,7 @@ async def chat_via_agent_api(
         "usage": {"duration_ms": duration_ms},
     }
     # The widget shows a "Chat on WhatsApp" button when the owner has a number set (digits only, as wa.me expects).
-    whatsapp = "".join(ch for ch in (getattr(agent, "lead_whatsapp_number", None) or "") if ch.isdigit())
+    whatsapp = _whatsapp_digits(agent)
     if whatsapp:
         result["handoff"] = {"whatsapp": whatsapp}
     return result

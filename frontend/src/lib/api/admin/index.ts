@@ -111,6 +111,7 @@ export interface LeadSettings {
   lead_notify_enabled: boolean;
   lead_notify_emails: string[];
   lead_whatsapp_number: string | null;
+  hide_branding: boolean;
   smtp_configured: boolean;
 }
 
@@ -121,7 +122,7 @@ export const getLeadSettings = async (agentId: string): Promise<LeadSettings> =>
 
 export const saveLeadSettings = async (
   agentId: string,
-  settings: Pick<LeadSettings, "lead_notify_enabled" | "lead_notify_emails" | "lead_whatsapp_number">
+  settings: Pick<LeadSettings, "lead_notify_enabled" | "lead_notify_emails" | "lead_whatsapp_number" | "hide_branding">
 ): Promise<LeadSettings> => {
   const response = await axiosInstance.patch(`/api/v1/admin/agents/${agentId}/lead-settings`, settings);
   return response.data;

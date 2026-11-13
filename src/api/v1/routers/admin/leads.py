@@ -1,7 +1,7 @@
 """Admin-only lead capture settings and lead listing for published agents.
 
 GET   /api/v1/admin/agents/{agent_id}/lead-settings             - current notification settings
-PATCH /api/v1/admin/agents/{agent_id}/lead-settings             - set lead_notify_enabled / lead_notify_emails / lead_whatsapp_number
+PATCH /api/v1/admin/agents/{agent_id}/lead-settings             - set lead_notify_enabled / lead_notify_emails / lead_whatsapp_number / hide_branding
 POST  /api/v1/admin/agents/{agent_id}/lead-settings/test-email  - send a sample lead email to the configured addresses
 GET   /api/v1/admin/agents/{agent_id}/leads?date_from=&date_to=  - leads, newest first (dates are Asia/Kathmandu, inclusive)
 GET   /api/v1/admin/agents/{agent_id}/leads/export.csv           - the same leads as a spreadsheet
@@ -60,6 +60,7 @@ def _settings(agent) -> dict:
         "lead_notify_enabled": bool(agent.lead_notify_enabled),
         "lead_notify_emails": list(agent.lead_notify_emails or []),
         "lead_whatsapp_number": agent.lead_whatsapp_number,
+        "hide_branding": bool(getattr(agent, "hide_branding", False)),
         "smtp_configured": system_setting.smtp_configured,
     }
 
@@ -97,6 +98,8 @@ class LeadSettingsUpdate(BaseModel):
     lead_notify_emails: Optional[List[EmailStr]] = Field(default=None, max_length=MAX_NOTIFY_EMAILS)
     # The client's WhatsApp number; send null or "" to clear it.
     lead_whatsapp_number: Optional[str] = Field(default=None, max_length=32)
+    # Hide "Powered by Spirit Monkey" in this assistant's widget. Only settable here (admin), never from the embed code.
+    hide_branding: Optional[bool] = None
 
 
 @router.patch("/agents/{agent_id}/lead-settings", operation_id="admin_set_agent_lead_settings")
@@ -117,6 +120,8 @@ async def set_lead_settings(agent_id: str, body: LeadSettingsUpdate, db: AsyncSe
     if enabled and not emails:
         raise HTTPException(status_code=422, detail="Add at least one address in lead_notify_emails to enable notifications")
 
+    if "hide_branding" in fields and body.hide_branding is not None:
+        agent.hide_branding = body.hide_branding
     if "lead_whatsapp_number" in fields:
         try:
             agent.lead_whatsapp_number = normalize_whatsapp_number(body.lead_whatsapp_number)
