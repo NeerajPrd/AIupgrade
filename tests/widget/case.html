@@ -23,7 +23,17 @@
   function done() { parent.postMessage({ case: caseName, results: results }, "*"); }
   function tick(ms) { return new Promise(function (r) { setTimeout(r, ms || 30); }); }
 
+  // The widget asks .../config once when the chat first opens; answered separately so it never
+  // consumes a queued chat response. configResponse = null simulates the request failing.
+  var CONFIG_URL = ENDPOINT.replace(/\/chat$/, "/config");
+  var configRequests = [];
+  var configResponse = { status: 200, body: { hide_branding: false, whatsapp: null } };
   window.fetch = function (url, opts) {
+    if (url === CONFIG_URL) {
+      configRequests.push({ url: url, headers: opts.headers, method: opts.method });
+      if (!configResponse) return Promise.reject(new TypeError("network down"));
+      return Promise.resolve(new Response(JSON.stringify(configResponse.body), { status: configResponse.status, headers: { "Content-Type": "application/json" } }));
+    }
     requests.push({ url: url, body: JSON.parse(opts.body), headers: opts.headers });
     var next = responses.shift() || { status: 200, body: { success: true, conversation_id: "conv-1", response: "ok" } };
     return Promise.resolve(new Response(JSON.stringify(next.body), { status: next.status, headers: { "Content-Type": "application/json" } }));
@@ -458,6 +468,144 @@
         open();
         var st = getComputedStyle(q(".fw-panel"));
         check("340px floating panel on desktop", st.width === "340px" && st.position === "absolute", st.width + " " + st.position);
+      });
+    },
+    powered_by_shown_by_default: function () {
+      return inject({}).then(function () {
+        check("no config request before the chat is opened", configRequests.length === 0);
+        open();
+        return tick(40);
+      }).then(function () {
+        var row = q(".fw-powered");
+        var link = row.querySelector("a");
+        var url = new URL(link.href);
+        check("config asked once, with the API key", configRequests.length === 1 && configRequests[0].headers["X-API-Key"] === "agapi_test" && configRequests[0].method === "POST");
+        check("line visible", getComputedStyle(row).display === "block");
+        check("text", row.textContent === "Powered by Spirit Monkey", row.textContent);
+        check("links to spirit-monkey.com", url.origin + url.pathname === "https://spirit-monkey.com/", link.href);
+        check("utm tags", url.searchParams.get("utm_source") === "widget" && url.searchParams.get("utm_medium") === "referral");
+        check("campaign is the client hostname", url.searchParams.get("utm_campaign") === location.hostname, url.searchParams.get("utm_campaign"));
+        check("new tab, noopener", link.target === "_blank" && /noopener/.test(link.rel));
+        check("sits below the input row", row.previousElementSibling === q(".fw-input-row"));
+        check("small and unobtrusive", parseFloat(getComputedStyle(row).fontSize) <= 11 && row.getBoundingClientRect().height <= 24, getComputedStyle(row).fontSize + " " + row.getBoundingClientRect().height);
+        q(".fw-close").click(); open();
+        return tick(40);
+      }).then(function () {
+        check("config not asked again on reopen", configRequests.length === 1);
+      });
+    },
+    powered_by_hidden_when_server_says_so: function () {
+      configResponse = { status: 200, body: { hide_branding: true, whatsapp: null } };
+      return inject({}).then(function () { open(); return tick(40); }).then(function () {
+        check("line hidden", getComputedStyle(q(".fw-powered")).display === "none");
+      });
+    },
+    powered_by_cannot_be_removed_from_the_page: function () {
+      return inject({ "data-hide-branding": "true", "data-branding": "false", "data-powered-by": "false" }).then(function () { open(); return tick(40); }).then(function () {
+        check("attributes are ignored", getComputedStyle(q(".fw-powered")).display === "block");
+      });
+    },
+    powered_by_shown_if_config_fails: function () {
+      configResponse = null;
+      return inject({}).then(function () { open(); return tick(40); }).then(function () {
+        check("line visible when the request fails", getComputedStyle(q(".fw-powered")).display === "block");
+        return send("hi");
+      }).then(function () {
+        check("chat still works", lastMessage().textContent === "ok");
+      });
+    },
+    powered_by_shown_if_config_errors: function () {
+      configResponse = { status: 500, body: { detail: "boom" } };
+      return inject({}).then(function () { open(); return tick(40); }).then(function () {
+        check("line visible on a server error", getComputedStyle(q(".fw-powered")).display === "block");
+      });
+    },
+    config_shows_whatsapp_before_first_message: function () {
+      configResponse = { status: 200, body: { hide_branding: false, whatsapp: "9779841234567" } };
+      return inject({}).then(function () { open(); return tick(40); }).then(function () {
+        var url = new URL(q(".fw-whatsapp").href);
+        check("button visible on open", getComputedStyle(q(".fw-handoff")).display === "block");
+        check("generic message when nothing was asked yet", url.searchParams.get("text") === "Hi, I was chatting with Demo on your website and would like to talk to someone.", url.searchParams.get("text"));
+        return send("fee kati ho?");
+      }).then(function () {
+        var url = new URL(q(".fw-whatsapp").href);
+        check("button stays after a reply that carries no number", getComputedStyle(q(".fw-handoff")).display === "block");
+        check("and now carries the question", url.searchParams.get("text") === "Hi, I was chatting with Demo on your website. My question: fee kati ho?", url.searchParams.get("text"));
+      });
+    },
+    page_api_open_send_close: function () {
+      return inject({ "data-quick-replies": "Pricing" }).then(function () {
+        var api = window.SpiritMonkeyChat;
+        check("API exposed with exactly open/close/send", api && Object.keys(api).sort().join(",") === "close,open,send", api && Object.keys(api).join(","));
+        check("closed at first", !q(".fw-panel").classList.contains("fw-open"));
+        api.open();
+        check("open() opens", q(".fw-panel").classList.contains("fw-open"));
+        api.open();
+        check("open() twice stays open", q(".fw-panel").classList.contains("fw-open"));
+        api.close();
+        check("close() closes", !q(".fw-panel").classList.contains("fw-open"));
+        check("send() reports it sent", api.send("  fee kati ho?  ") === true);
+        return tick(60);
+      }).then(function () {
+        check("send() opened the chat", q(".fw-panel").classList.contains("fw-open"));
+        check("message sent to the API, trimmed", requests.length === 1 && requests[0].body.message === "fee kati ho?", JSON.stringify(requests[0] && requests[0].body));
+        check("welcome, then the visitor message", messages()[0].textContent === "Hi! How can I help you today?" && messages()[1].textContent === "fee kati ho?");
+        check("quick replies removed", !q(".fw-chips"));
+        check("reply shown", lastMessage().textContent === "ok");
+      });
+    },
+    page_api_send_is_plain_text_and_guarded: function () {
+      var release;
+      var realFetch = window.fetch;
+      return inject({}).then(function () {
+        var api = window.SpiritMonkeyChat;
+        check("empty text refused", api.send("   ") === false && api.send("") === false);
+        check("non-text refused", api.send({ toString: function () { return "x"; } }) === false && api.send(42) === false && api.send(null) === false);
+        check("nothing sent", requests.length === 0);
+        window.fetch = function (url, opts) {
+          if (url === CONFIG_URL) return realFetch(url, opts);
+          return new Promise(function (resolve) { release = function () { resolve(realFetch(url, opts)); }; });
+        };
+        check("html is sent", api.send("<img src=x onerror=alert(1)> तपाईंको सेवा के के छ?") === true);
+        return tick(30);
+      }).then(function () {
+        var bubble = messages()[1];
+        check("shown as text, not HTML", !bubble.querySelector("img") && bubble.textContent.indexOf("<img") === 0);
+        check("second send refused while waiting", window.SpiritMonkeyChat.send("again") === false);
+        window.fetch = realFetch;
+        release();
+        return tick(80);
+      }).then(function () {
+        check("only one request made", requests.length === 1);
+        var long = new Array(700).join("a");
+        window.SpiritMonkeyChat.send(long);
+        return tick(60);
+      }).then(function () {
+        check("long text capped at 500", requests[1].body.message.length === 500, requests[1].body.message.length);
+      });
+    },
+    phone_layout_with_branding_and_whatsapp: function () {
+      configResponse = { status: 200, body: { hide_branding: false, whatsapp: "9779841234567" } };
+      return inject({ "data-quick-replies": "Pricing|Free trial" }).then(function () { open(); return tick(40); }).then(function () {
+        var input = q(".fw-input-row").getBoundingClientRect();
+        var handoff = q(".fw-handoff").getBoundingClientRect();
+        var powered = q(".fw-powered").getBoundingClientRect();
+        var msgs = q(".fw-messages").getBoundingClientRect();
+        check("stacked without overlap: messages, WhatsApp, input, powered-by", msgs.bottom <= handoff.top + 1 && handoff.bottom <= input.top + 1 && input.bottom <= powered.top + 1, [msgs.bottom, handoff.top, handoff.bottom, input.top, input.bottom, powered.top].join(" "));
+        check("everything inside the screen", powered.bottom <= window.innerHeight + 1 && powered.right <= window.innerWidth + 1, powered.bottom + " " + window.innerHeight);
+        check("messages area still has room", msgs.height > 200, msgs.height);
+      });
+    },
+    desktop_layout_with_branding_and_whatsapp: function () {
+      configResponse = { status: 200, body: { hide_branding: false, whatsapp: "9779841234567" } };
+      return inject({}).then(function () { open(); return tick(40); }).then(function () {
+        var panel = q(".fw-panel").getBoundingClientRect();
+        var input = q(".fw-input-row").getBoundingClientRect();
+        var powered = q(".fw-powered").getBoundingClientRect();
+        var bubble = q(".fw-bubble").getBoundingClientRect();
+        check("powered-by inside the panel, under the input", input.bottom <= powered.top + 1 && powered.bottom <= panel.bottom + 1);
+        check("panel does not cover the launcher", panel.bottom <= bubble.top, panel.bottom + " " + bubble.top);
+        check("panel still 480px tall", Math.round(panel.height) === 480, panel.height);
       });
     },
     storage_blocked: function () {

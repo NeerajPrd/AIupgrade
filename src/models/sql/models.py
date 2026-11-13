@@ -79,6 +79,8 @@ class Agent(Base):
     lead_notify_emails: Mapped[List[str]] = mapped_column(JSONB, default=list, server_default="[]")
     # The client's own WhatsApp number in international form (e.g. +9779841234567); NULL = not set.
     lead_whatsapp_number: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    # Admin-only: hide the "Powered by Spirit Monkey" line in this agent's chat widget.
+    hide_branding: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 

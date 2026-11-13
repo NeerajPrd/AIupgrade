@@ -40,7 +40,7 @@ def _lead(agent_id):
 def setup():
     agent = SimpleNamespace(id=uuid.uuid4(), name="Spirit Monkey Assistant",
                             lead_notify_enabled=False, lead_notify_emails=[],
-                            lead_whatsapp_number=None)
+                            lead_whatsapp_number=None, hide_branding=False)
     db = FakeDB(agent, [_lead(agent.id)])
 
     app = FastAPI()
@@ -179,3 +179,19 @@ def test_whatsapp_number_can_be_cleared_and_is_untouched_when_omitted(setup):
     r = setup.client.patch(_settings_url(setup.agent.id), json={"lead_whatsapp_number": ""}, headers=ADMIN)
     assert r.status_code == 200
     assert setup.agent.lead_whatsapp_number is None
+
+
+def test_hide_branding_defaults_off_and_is_admin_settable(setup):
+    assert setup.client.get(_settings_url(setup.agent.id), headers=ADMIN).json()["hide_branding"] is False
+    r = setup.client.patch(_settings_url(setup.agent.id), json={"hide_branding": True}, headers=ADMIN)
+    assert r.status_code == 200 and r.json()["hide_branding"] is True
+    assert setup.agent.hide_branding is True
+    # Other saves leave it alone.
+    setup.client.patch(_settings_url(setup.agent.id), json={"lead_whatsapp_number": ""}, headers=ADMIN)
+    assert setup.agent.hide_branding is True
+
+
+def test_hide_branding_cannot_be_set_by_a_non_admin(setup):
+    r = setup.client.patch(_settings_url(setup.agent.id), json={"hide_branding": True}, headers={"X-Test-Role": "user"})
+    assert r.status_code == 403
+    assert setup.agent.hide_branding is False
