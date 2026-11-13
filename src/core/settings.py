@@ -201,6 +201,12 @@ class Settings(BaseSettings):
     FAST_MODEL_PROVIDER: str = "gemini"
     FAST_MODEL_ID: str = "gemini-2.5-flash"
 
+    # Security switches (see src/services/security/policy.py). Both are off unless set in .env.
+    # ALLOW_PUBLIC_SIGNUP=true lets anyone register an account (email signup and first Google login).
+    # ENABLE_SETUP_ENDPOINT=true exposes POST /setup, which repoints the database, to admins.
+    ALLOW_PUBLIC_SIGNUP: bool = False
+    ENABLE_SETUP_ENDPOINT: bool = False
+
     # Small, cheap model for helper calls that are not the customer-facing answer: choosing a
     # tool for a message and extracting lead details. Change it in .env without a rebuild.
     # LIGHT_LLM_PROVIDER empty = same provider as FAST_MODEL_PROVIDER.

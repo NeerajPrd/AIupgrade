@@ -91,6 +91,7 @@ const FagoonAgentsPage: NextPage = () => {
       
       const response = await fetch(`${API_BASE_URL}/api/v1/chat`, {
         method: 'POST',
+        credentials: 'include', // these endpoints require the logged-in session
         headers: {
           'Content-Type': 'application/json',
         },
@@ -134,6 +135,7 @@ const FagoonAgentsPage: NextPage = () => {
       
       const response = await fetch(`${API_BASE_URL}/api/v1/tts`, {
         method: 'POST',
+        credentials: 'include', // these endpoints require the logged-in session
         headers: {
           'Content-Type': 'application/json',
         },
@@ -176,6 +178,7 @@ const FagoonAgentsPage: NextPage = () => {
       
       const response = await fetch(`${API_BASE_URL}/api/v1/generate-image`, {
         method: 'POST',
+        credentials: 'include', // these endpoints require the logged-in session
         headers: {
           'Content-Type': 'application/json',
         },

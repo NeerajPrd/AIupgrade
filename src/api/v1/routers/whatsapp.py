@@ -41,6 +41,11 @@ async def start_session(
             agent = await pg_services.get_agent_by_id(uuid.UUID(agent_id))
             if not agent:
                 raise HTTPException(status_code=404, detail="Agent not found.")
+            # Only the agent's owner (or an admin) may link a WhatsApp number to it.
+            caller = getattr(request.state, "user", None)
+            is_admin = getattr(caller, "role", "user") in {"admin", "superadmin"}
+            if not is_admin and str(agent.user_id) != str(getattr(request.state, "user_id", None)):
+                raise HTTPException(status_code=403, detail="Not your agent.")
                 
             try:
                 session_query = select(WhatsAppSession).where(WhatsAppSession.agent_id == uuid.UUID(agent_id))

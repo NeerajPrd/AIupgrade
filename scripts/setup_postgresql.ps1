@@ -122,12 +122,8 @@ try {
 }
 
 # 6. Seed Default User
-Write-Host "`nSeeding default admin user..." -ForegroundColor Cyan
-try {
-    & .venv\Scripts\python.exe scripts/auto_setup_user.py
-} catch {
-    Write-Host "[x] Seeding user failed." -ForegroundColor Red
-}
+Write-Host "`nNo default admin is created. Create yours with:" -ForegroundColor Cyan
+Write-Host '  .venv\Scripts\python.exe scripts/create_admin.py --email you@example.com --name "Your Name"'
 
 Write-Host "`n==========================================================" -ForegroundColor Green
 Write-Host "  SETUP COMPLETED! You can now start the server." -ForegroundColor Green

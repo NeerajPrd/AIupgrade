@@ -1,8 +1,6 @@
 import os
 import uuid
 import asyncio
-import bcrypt
-from datetime import datetime, timezone
 from fastapi import APIRouter, status, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
@@ -10,11 +8,21 @@ from loguru import logger
 from alembic.config import Config
 from alembic import command
 
+from src.api.v1.routers.database.db_switch import require_admin
 from src.core.database.postgres import PostgresManager
-from src.services.nosql.postgres_services import PostgresServices
 from src.core.settings import system_setting
+from src.services.security import policy
 
-router = APIRouter()
+
+async def require_setup_enabled():
+    # 404, not 403: when the feature is off (the default) the endpoint should not look like it exists.
+    if not policy.setup_endpoint_enabled():
+        raise HTTPException(status_code=404, detail="Not Found")
+
+
+# Repointing the database is as privileged as it gets: off unless ENABLE_SETUP_ENDPOINT=true,
+# and then only for a logged-in admin.
+router = APIRouter(dependencies=[Depends(require_setup_enabled), Depends(require_admin)])
 
 class DatabaseSetupRequest(BaseModel):
     database_url: str = Field(
@@ -60,36 +68,6 @@ def run_alembic_upgrade(database_url: str):
     command.upgrade(alembic_cfg, "head")
     logger.info("Migrations completed successfully.")
 
-async def seed_default_admin_user(postgres_manager: PostgresManager):
-    async with postgres_manager.get_session() as session:
-        pg_services = PostgresServices(session)
-        email = "admin@fagoon.ai"
-        try:
-            existing_user = await pg_services.get_user_by_email(email)
-            if not existing_user:
-                raw_password = "adminpassword123"
-                hashed_pw = bcrypt.hashpw(raw_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
-                
-                user_data = {
-                    "id": uuid.uuid4(),
-                    "name": "Fagoon Admin",
-                    "email": email,
-                    "password_hash": hashed_pw,
-                    "role": "admin",
-                    "verified": True,
-                    "active": True,
-                    "visited": 1,
-                    "created_at": datetime.now(timezone.utc),
-                    "updated_at": datetime.now(timezone.utc),
-                    "social_media": {}
-                }
-                await pg_services.create_user(user_data)
-                logger.info("Admin user seeded successfully.")
-            else:
-                logger.info("Admin user already exists in target database.")
-        except Exception as e:
-            logger.error(f"Error seeding default admin user: {e}")
-
 @router.post("", operation_id="setup_database")
 async def setup_database(
     request: Request,
@@ -123,8 +101,6 @@ async def setup_database(
         # 3. Initialize the new PostgresManager connection pool
         new_manager = PostgresManager(db_url)
         
-        # 4. Seed default administrator account if not present in the new DB
-        await seed_default_admin_user(new_manager)
         
         # 5. Hot-swap the connection manager in the running FastAPI application state
         request.app.state.postgres_manager = new_manager
@@ -135,11 +111,10 @@ async def setup_database(
             status_code=status.HTTP_200_OK,
             content={
                 "status": "success",
-                "message": "Database configured, migrated, and activated successfully.",
-                "default_admin_account": {
-                    "email": "admin@fagoon.ai",
-                    "password": "adminpassword123"
-                }
+                "message": (
+                    "Database configured, migrated, and activated successfully. No account is created "
+                    "automatically: run scripts/create_admin.py to add an admin to the new database."
+                ),
             }
         )
     except Exception as e:

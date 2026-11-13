@@ -3,6 +3,7 @@ from fastapi.responses import RedirectResponse, JSONResponse, Response
 from loguru import logger
 import uuid
 from src.core.settings import system_setting
+from src.services.security import policy
 from src.core.exceptions import UnauthorizedGoogleAccess
 from src.workspace_crud.crud.google_token import GoogleTokenCRUD
 from src.workspace_crud.crud.user import UserCRUD
@@ -90,7 +91,11 @@ async def google_callback(
             if not system_user and token_info.get("email"):
                 system_user = await pg_services.get_user_by_email(token_info.get("email"))
 
-            # If still not found, create a new system user with a random password
+            # If still not found, create a new system user with a random password -
+            # but only when public signup is on. Otherwise Google login would be an open signup door.
+            if not system_user and not policy.public_signup_allowed():
+                logger.warning("Google login refused: no existing account and public signup is off.")
+                return RedirectResponse(url=f"{system_setting.FRONTEND_REDIRECT_URI}?error=signup_closed", status_code=302)
             if not system_user:
                 raw_pw = secrets.token_urlsafe(16)
                 hashed = await asyncio.to_thread(bcrypt.hashpw, raw_pw.encode("utf-8"), bcrypt.gensalt())

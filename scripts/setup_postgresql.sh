@@ -106,12 +106,8 @@ else
 fi
 
 # 6. Seed Default User
-echo -e "\nSeeding default admin user..."
-if [ -f ".venv/bin/python" ]; then
-    .venv/bin/python scripts/auto_setup_user.py
-else
-    python3 scripts/auto_setup_user.py || echo "[x] Seeding user failed."
-fi
+echo -e "\nNo default admin is created. Create yours with:"
+echo "  python scripts/create_admin.py --email you@example.com --name \"Your Name\""
 
 echo -e "\n=========================================================="
 echo "  SETUP COMPLETED! You can now start the server."

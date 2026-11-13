@@ -14,6 +14,7 @@ from src.core.database.postgres import PostgresManager
 from src.utils.upgrade_auth.auth_utils import create_and_send_token, clear_auth_cookies
 from src.utils.upgrade_auth.app_error import AppError
 from src.core.settings import system_setting
+from src.services.security import policy
 
 
 router = APIRouter()
@@ -63,7 +64,12 @@ async def signup(
     response: Response,
     auth_service: AuthService = Depends(get_auth_service),
 ):
-    """Handles user registration (signup)."""
+    """Handles user registration (signup). Off unless ALLOW_PUBLIC_SIGNUP=true."""
+    if not policy.public_signup_allowed():
+        raise AppError(
+            "Sign-up is closed. Please contact Spirit Monkey to get an account.",
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
     user_in_db = await auth_service.signup_user(user_data, response, request)
     return UserResponse.model_validate(user_in_db.model_dump(by_alias=True))
 
