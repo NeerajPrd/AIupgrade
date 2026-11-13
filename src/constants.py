@@ -18,7 +18,6 @@ ALLOWED_URL_PATH_WITHOUT_AUTHORIZATION = [
     "/openapi.json",
     "/docs",
     "/favicon.ico",
-    "/upgrade/0329032",
     "/api/v1/auth/login",
     "/api/v1/workflow-api/",  # Public workflow API (uses X-API-Key auth)
     "/api/v1/auth/register",
@@ -32,11 +31,7 @@ ALLOWED_URL_PATH_WITHOUT_AUTHORIZATION = [
     "/api/v1/users/reset-password/",
     "/api/v1/google-auth/google/login",
     "/api/v1/google-auth/google/callback",
-    "/api/v1/chat",
-    "/api/v1/tts",
-    "/api/v1/generate-image",
     "/ws",
     "/api/v1/ws",
     "/api/v1/whatsapp-session/webhook",
-    "/api/v1/whatsapp-session/start",
 ]

@@ -153,6 +153,10 @@ async def lifespan(app: FastAPI):
         logger.critical("DATABASE_URL is not set! PostgreSQL is required for this application.")
         raise RuntimeError("DATABASE_URL is missing.")
 
+    # An old install may still have the seeded admin account with its published password: switch it off.
+    from src.services.security.policy import disable_legacy_default_admin
+    await disable_legacy_default_admin(postgres_manager_instance_local)
+
     # Starts the periodic status broadcaster
     asyncio.create_task(periodic_status_broadcaster())
 

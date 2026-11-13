@@ -64,11 +64,8 @@ fi
 echo "Running database migrations..."
 uv run alembic upgrade heads
 
-# ---- Seed default user ----
-if [ -f "scripts/auto_setup_user.py" ]; then
-  echo "Seeding default user..."
-  uv run python scripts/auto_setup_user.py 2>/dev/null || echo "User seeding skipped."
-fi
+# No default user is seeded. Create the first admin yourself:
+#   docker compose exec app uv run python scripts/create_admin.py --email you@example.com --name "Your Name"
 
 # ---- If a command was passed (e.g. the Celery worker), run that instead
 # of the web app. Migrations/extensions above still apply so the worker

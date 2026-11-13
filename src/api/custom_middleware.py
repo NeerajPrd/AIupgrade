@@ -15,6 +15,7 @@ import hashlib
 import traceback
 
 from src.constants import ALLOWED_URL_PATH_WITHOUT_AUTHORIZATION
+from src.services.security.policy import redact_for_log, redact_query_for_log
 from src.core.settings import system_setting
 from src.models.auth_models.user_model import UserInDB
 from src.services.nosql.postgres_services import PostgresServices
@@ -48,7 +49,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 logger.info("Access token missing, attempting refresh.")
                 return await self._handle_refresh_and_proceed(request, call_next, refresh_token_cookie)
             else:
-                logger.warning(f"401 Unauthorized: Access token is missing. Path: {request.url.path} | Headers: {dict(request.headers)} | Cookies: {dict(request.cookies)}")
+                # Never log headers or cookies here: they can hold tokens and API keys.
+                logger.warning(f"401 Unauthorized: Access token is missing. Path: {request.url.path}")
                 return JSONResponse(
                     status_code=HTTP_401_UNAUTHORIZED,
                     content={"detail": "Authentication failed: Access token is missing."}
@@ -214,10 +216,23 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         return None
 
+    _SELF_AUTHENTICATED_PREFIXES = (
+        "/agent-api/",
+        "/workflow-api/",
+        "/webhook/",
+        "/whatsapp-session/webhook/",
+        "/file/image/",
+    )
+
     def _is_public_path(self, path: str) -> bool:
 
-        if "/webhook/" in path or "/file/image/" in path or "/workflow-api/" in path or "/agent-api/" in path:
-            return True
+        # Endpoints that authenticate themselves (X-API-Key or a provider signature) or serve public
+        # images. Matched as path PREFIXES, never "anywhere in the path", so a logged-in-only route
+        # that merely contains e.g. "/webhook/" further along is not opened up by accident.
+        api_v1 = system_setting.API_V1_STR.rstrip("/")
+        for base in (api_v1, ""):
+            if any(path.startswith(base + prefix) for prefix in self._SELF_AUTHENTICATED_PREFIXES):
+                return True
         # Normalize path: remove trailing slash for comparison
         path_to_check = path.rstrip("/") if path != "/" else path
         
@@ -291,9 +306,17 @@ class LoggingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         if request.method == "OPTIONS":
             return await call_next(request)
-        log_parts = [f"Incoming request: {request.method} {request.url}"]
+        # Path only (the full URL would put login tokens passed as ?access_token= into the logs).
+        log_parts = [f"Incoming request: {request.method} {request.url.path}"]
         query_params = dict(request.query_params)
-        if query_params: log_parts.append(f"Params: {query_params}")
+        if query_params: log_parts.append(f"Params: {redact_query_for_log(query_params)}")
+
+        # Website-visitor chats carry names and phone numbers: never write their bodies to the log.
+        if "/agent-api/" in request.url.path:
+            logger.info(" | ".join(log_parts) + " | Body: [NOT LOGGED: visitor chat]")
+            response = await call_next(request)
+            logger.info(f"Response: {response.status_code}")
+            return response
 
         # Skip body reading for webhook routes to avoid consuming the stream for signature verification
         if "/webhook/" in request.url.path:
@@ -310,7 +333,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         if "application/json" in content_type:
             try:
                 body = json.loads(body_bytes.decode("utf-8"))
-                log_parts.append(f"Body: {body}")
+                log_parts.append(f"Body: {redact_for_log(body)}")
             except Exception:
                 pass
 
