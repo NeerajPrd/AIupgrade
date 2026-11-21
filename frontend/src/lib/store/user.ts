@@ -27,10 +27,11 @@ interface UserState {
     logout: () => void;
 }
 
-export const useMe = () => {
+export const useMe = (options: { enabled?: boolean } = {}) => {
     return useQuery({
         queryKey: ["me"],
         queryFn: me,
+        enabled: options.enabled ?? true,
         retry: false,
         staleTime: 1000 * 60 * 5, // 5 min cache
     });
