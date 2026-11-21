@@ -15,6 +15,7 @@ import { HumanizeTimestamp } from "@/utils/data/date";
 import { showErrorToast } from "@/utils/toast";
 import { getUpgradeChatIds } from "@/lib/api/chat";
 import { useLogout, useMe } from "@/lib/store/user";
+import { isPublicPage } from "@/lib/public-paths";
 import { useDeleteChat } from "@/app/(chat1)/hooks/useUpgradeChat";
 import ChatDropdown from "./chat/ChatDropdown";
 import AgentDropdown from "./sidebar/AgentDropdown";
@@ -26,7 +27,10 @@ const Sidebar = () => {
   const { historyId: chatHistoryId, agentId, chatId } = useParams();
   const searchParams = useSearchParams();
 
-  const { data: user } = useMe();
+  // On public pages (Privacy Policy, Terms) the sidebar is hidden: don't call the API there, so a
+  // logged-out visitor gets no 401s and is never sent to /login.
+  const onPublicPage = isPublicPage(pathname);
+  const { data: user } = useMe({ enabled: !onPublicPage });
   const { mutateAsync: deleteChat, isPending } = useDeleteChat();
 
   const [chatDropdownOpen, setChatDropdownOpen] = useState(false);
@@ -50,6 +54,7 @@ const Sidebar = () => {
   const { data } = useQuery({
     queryKey: ["chat-ids"],
     queryFn: getUpgradeChatIds,
+    enabled: !onPublicPage,
   });
 
   const conversations = data?.data?.conversations ?? [];

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { shouldRedirectToLogin } from '@/lib/public-paths';
 
 const axiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_BASE_URL || "",
@@ -44,8 +45,9 @@ axiosInstance.interceptors.response.use(
       document.cookie = "jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
       document.cookie = "userData=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 
-      // Handle unauthorized access (e.g., redirect to login)
-      if (window.location.pathname !== '/login') {
+      // Handle unauthorized access (e.g., redirect to login). Public pages such as the
+      // Privacy Policy and Terms must stay readable without an account.
+      if (shouldRedirectToLogin(window.location.pathname)) {
         window.location.href = "/login";
       }
     }

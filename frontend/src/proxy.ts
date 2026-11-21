@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { axiosServer } from '@/lib/api/axios';
+import { isPublicPage } from '@/lib/public-paths';
 
 export async function proxy(request: NextRequest) {
   console.log("[Proxy] Match Path:", request.nextUrl.pathname);
   const token = request.cookies.get("jwt");
   console.log("[Proxy] Incoming jwt cookie:", token?.value ? "Present" : "Missing");
+
+  // The Privacy Policy and Terms are public; nothing else is.
+  if (isPublicPage(request.nextUrl.pathname)) {
+    return NextResponse.next();
+  }
 
   if (!token && !request.nextUrl.pathname.startsWith("/login")) {
     console.log("[Proxy] No token found, redirecting to /login");
