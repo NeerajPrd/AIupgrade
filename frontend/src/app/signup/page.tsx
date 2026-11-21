@@ -13,6 +13,7 @@ import {
 } from "react-icons/ri";
 import { HiOutlineMail } from "react-icons/hi";
 import { cn } from "@/lib/utils";
+import { PRIVACY_POLICY_URL, TERMS_URL } from "@/lib/public-paths";
 import { showSuccessToast, showErrorToast } from "@/utils/toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -124,13 +125,13 @@ export default function SignupPage() {
         />
         <div className="absolute bottom-8 left-8 flex gap-8 text-sm text-white/80 z-20">
           <a
-            href="/privacy-policy"
+            href={PRIVACY_POLICY_URL}
             className="hover:text-white transition-colors"
           >
             Privacy Policy
           </a>
           <a
-            href="/terms-and-conditions"
+            href={TERMS_URL}
             className="hover:text-white transition-colors"
           >
             Terms of Service

@@ -593,8 +593,8 @@
       <a href="#features">Features</a>
       <a href="#demo">Demo</a>
       <a href="#contact">Contact</a>
-      <a id="privacyLink" href="https://app.spirit-monkey.com/privacy-policy">Privacy Policy</a>
-      <a id="termsLink" href="https://app.spirit-monkey.com/terms-and-conditions">Terms</a>
+      <a href="/privacy-policy/">Privacy Policy</a>
+      <a href="/terms/">Terms</a>
     </div>
   </div>
 </footer>
@@ -630,9 +630,6 @@
   emailEl.textContent = SITE_CONFIG.contact.email;
   emailEl.href = "mailto:" + SITE_CONFIG.contact.email;
   document.getElementById("appLink").href = SITE_CONFIG.links.appUrl;
-  // Privacy Policy and Terms live on the dashboard site
-  document.getElementById("privacyLink").href = SITE_CONFIG.links.appUrl + "/privacy-policy";
-  document.getElementById("termsLink").href = SITE_CONFIG.links.appUrl + "/terms-and-conditions";
 
   // ---- WhatsApp links (number comes from SITE_CONFIG; wa.me wants digits only) ----
   const whatsappLink = text =>

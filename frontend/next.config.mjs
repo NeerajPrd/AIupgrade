@@ -4,7 +4,17 @@
 // service address when the frontend itself runs in a container.
 const BACKEND_URL = process.env.BACKEND_URL || "http://127.0.0.1:8004";
 
+// The Privacy Policy and Terms live only on the static marketing site, so they never depend on the
+// dashboard's login logic. Keep these URLs in step with src/lib/public-paths.ts.
+export const LEGAL_REDIRECTS = [
+  { source: "/privacy-policy", destination: "https://spirit-monkey.com/privacy-policy/", permanent: true },
+  { source: "/terms-and-conditions", destination: "https://spirit-monkey.com/terms/", permanent: true },
+];
+
 const nextConfig = {
+  async redirects() {
+    return LEGAL_REDIRECTS;
+  },
   async rewrites() {
     return [
       {
