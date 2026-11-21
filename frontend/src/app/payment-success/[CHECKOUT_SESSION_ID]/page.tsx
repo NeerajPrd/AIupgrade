@@ -180,7 +180,7 @@ const PaymentSuccess: React.FC = () => {
                   Try Again
                 </button>
                 <button 
-                  onClick={() => window.location.href = 'mailto:connect@fagoondigital.com'}
+                  onClick={() => window.location.href = 'mailto:spirit.monkeytech@gmail.com'}
                   className="bg-blue-500 text-white px-6 py-2 rounded-full hover:bg-blue-600 transition-colors inline-flex items-center gap-2"
                 >
                   <Mail className="w-4 h-4" />

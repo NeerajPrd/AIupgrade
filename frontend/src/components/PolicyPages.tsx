@@ -4,11 +4,11 @@ import { ReactNode } from "react";
 
 const PolicyLayout = ({ children }: { children: ReactNode }) => {
   return (
-    <main className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-[#0b0b0d] text-white transition-colors duration-200">
+    <main className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-navy-950 text-white transition-colors duration-200">
       <nav className="max-w-4xl mx-auto mb-8">
         <Link
           href="/chat"
-          className="inline-flex items-center text-sm text-zinc-400 hover:text-[#FB923C] transition-colors duration-200"
+          className="inline-flex items-center text-sm text-zinc-400 hover:text-brand-500 transition-colors duration-200"
         >
           <svg
             className="w-4 h-4 mr-2"
@@ -25,7 +25,7 @@ const PolicyLayout = ({ children }: { children: ReactNode }) => {
         </Link>
       </nav>
       <div className="max-w-4xl mx-auto">
-        <div className="bg-[#121214] border border-zinc-800 shadow-2xl rounded-2xl backdrop-blur-sm overflow-hidden">
+        <div className="bg-navy-950 border border-zinc-800 shadow-2xl rounded-2xl backdrop-blur-sm overflow-hidden">
           <div className="p-8 md:p-12">{children}</div>
         </div>
       </div>
@@ -33,13 +33,13 @@ const PolicyLayout = ({ children }: { children: ReactNode }) => {
         <div className="flex justify-center space-x-6">
           <Link
             href="/privacy-policy"
-            className="hover:text-[#FB923C] transition-colors duration-200"
+            className="hover:text-brand-500 transition-colors duration-200"
           >
             Privacy Policy
           </Link>
           <Link
             href="/terms-and-conditions"
-            className="hover:text-[#FB923C] transition-colors duration-200"
+            className="hover:text-brand-500 transition-colors duration-200"
           >
             Terms & Conditions
           </Link>
@@ -51,7 +51,7 @@ const PolicyLayout = ({ children }: { children: ReactNode }) => {
 
 const SectionHeader = ({ children }: { children: ReactNode }) => (
   <h2 className="text-xl font-bold text-zinc-100 mt-12 mb-6 pb-2 border-b border-zinc-800 flex items-center gap-2">
-    <span className="w-1 h-5 bg-[#FB923C] rounded-full" />
+    <span className="w-1 h-5 bg-brand-500 rounded-full" />
     {children}
   </h2>
 );
@@ -64,7 +64,7 @@ const ListItem = ({
   children: ReactNode;
 }) => (
   <li className="flex gap-3 text-zinc-300 leading-relaxed text-sm">
-    <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#FB923C] mt-2" />
+    <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-brand-500 mt-2" />
     <div>
       {title && (
         <strong className="text-zinc-100 font-semibold">{title}</strong>
@@ -79,7 +79,7 @@ export function PrivacyPolicy() {
     <PolicyLayout>
       <div className="prose prose-invert max-w-none">
         <div className="mb-12 text-center">
-          <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-[#FB923C] mb-4 tracking-tight">
+          <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-brand-500 mb-4 tracking-tight">
             Privacy Policy
           </h1>
           <p className="text-xs text-zinc-500 font-mono">
@@ -131,7 +131,7 @@ export function PrivacyPolicy() {
           For any open-source inquiries, security disclosures, or collaboration questions, please contact the maintainers at:{" "}
           <a
             href="mailto:admin@fagoondigital.com"
-            className="text-[#FB923C] hover:underline transition-colors duration-200"
+            className="text-brand-500 hover:underline transition-colors duration-200"
           >
             admin@fagoondigital.com
           </a>
@@ -146,7 +146,7 @@ export function TermsAndConditions() {
     <PolicyLayout>
       <div className="prose prose-invert max-w-none">
         <div className="mb-12 text-center">
-          <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-[#FB923C] mb-4 tracking-tight">
+          <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-brand-500 mb-4 tracking-tight">
             Terms and Conditions
           </h1>
           <p className="text-xs text-zinc-500 font-mono">
@@ -195,7 +195,7 @@ export function TermsAndConditions() {
           For project inquiries, security disclosures, or other open-source collaborations, contact the maintainers at:{" "}
           <a
             href="mailto:admin@fagoondigital.com"
-            className="text-[#FB923C] hover:underline transition-colors duration-200"
+            className="text-brand-500 hover:underline transition-colors duration-200"
           >
             admin@fagoondigital.com
           </a>

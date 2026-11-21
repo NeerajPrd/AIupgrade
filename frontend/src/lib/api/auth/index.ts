@@ -35,3 +35,9 @@ export const googleLogin = async () => {
   const response = await axiosInstance.get('/api/v1/google-auth/google/login');
   return response.data;
 };
+
+// Public: whether the login page should offer "Sign Up" (ALLOW_PUBLIC_SIGNUP on the server).
+export const getAuthOptions = async (): Promise<{ public_signup: boolean }> => {
+  const response = await axiosInstance.get(`/api/v1/auth/options`);
+  return response.data;
+};

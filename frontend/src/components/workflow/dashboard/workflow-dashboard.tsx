@@ -75,13 +75,13 @@ const WorkflowDashboard = () => {
     return (
         <div className='flex flex-col gap-7'>
             <div className='flex justify-between gap-5'>
-                <div className="bg-white/40 flex-1 backdrop-blur-3xl border border-gray-100 dark:border-gray-700  dark:bg-[#2f2f2f] rounded-lg shadow-md p-6 flex flex-col justify-between">
+                <div className="bg-white/40 flex-1 backdrop-blur-3xl border border-gray-100 dark:border-gray-700  dark:bg-navy-800 rounded-lg shadow-md p-6 flex flex-col justify-between">
                     <div className='w-full h-full flex flex-col gap-2 text-sm'>
                         Total Workflows
                         <div className='text-2xl font-extrabold'>{totalCount || workflows.length || 0}</div>
                     </div>
                 </div>
-                <div className="bg-white/40 flex-1 backdrop-blur-3xl border border-gray-100 dark:border-gray-700  dark:bg-[#2f2f2f] rounded-lg shadow-md p-6 flex flex-col justify-between">
+                <div className="bg-white/40 flex-1 backdrop-blur-3xl border border-gray-100 dark:border-gray-700  dark:bg-navy-800 rounded-lg shadow-md p-6 flex flex-col justify-between">
                     <div className='w-full h-full flex flex-col gap-2 text-sm'>
                         Published Workflows (Page)
                         <div className='text-2xl font-extrabold'>{publishedCount}</div>
@@ -113,7 +113,7 @@ const WorkflowDashboard = () => {
 
                         {/* 2. Listed Workflows */}
                         {workflows.map((workflow: any) => (
-                            <div key={workflow.id} className="bg-white/40 backdrop-blur-3xl border border-gray-100 dark:border-gray-700  dark:bg-[#2f2f2f] rounded-lg shadow-md flex 
+                            <div key={workflow.id} className="bg-white/40 backdrop-blur-3xl border border-gray-100 dark:border-gray-700  dark:bg-navy-800 rounded-lg shadow-md flex 
                         flex-col justify-between w-full">
                                 <div className='w-full h-full flex justify-between gap-2 text-sm p-2'>
                                     {workflow.name}

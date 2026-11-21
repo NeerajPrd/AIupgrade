@@ -144,8 +144,8 @@ const NovaMiniChat: React.FC = () => {
             {message.role === "assistant" && (
                 <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
                     <Image
-                        src="/Icon.svg"
-                        alt="Upgrade AI"
+                        src="/spirit-monkey-icon.png"
+                        alt="Spirit Monkey Assistant"
                         width={24}
                         height={24}
                         className="object-cover"
@@ -183,10 +183,10 @@ const NovaMiniChat: React.FC = () => {
                 whileTap={{ scale: 0.95 }}
                 className={`fixed bottom-5 sm:bottom-16 right-4 p-2.5 rounded-full bg-orange-600 text-white shadow-lg 
           flex items-center gap-2 group z-50 animate-pulse hover:animate-none group transition-all ${isChatOpen ? "hidden" : ""}`}
-                aria-label="Chat with Upgrade AI"
+                aria-label="Chat with Spirit Monkey Assistant"
             >
                 <MessageSquare className="w-5 h-5" />
-                <span className="hidden group-hover:block">Chat With Nova Mini</span>
+                <span className="hidden group-hover:block">Chat with Spirit Monkey Assistant</span>
             </motion.button>
 
             <AnimatePresence>
@@ -211,7 +211,7 @@ const NovaMiniChat: React.FC = () => {
                                     </div>
                                     <div>
                                         <h2 className="text-sm font-semibold text-white m-0">
-                                            Fagoon Nova Mini
+                                            Spirit Monkey Assistant
                                         </h2>
                                         <a
                                             href="/"
@@ -219,7 +219,7 @@ const NovaMiniChat: React.FC = () => {
                                             rel="noopener noreferrer"
                                             className="text-xs transition-colors text-white hover:text-white"
                                         >
-                                            Powered by Fagoon Upgrade
+                                            Powered by Spirit Monkey
                                         </a>
                                     </div>
                                 </div>
@@ -243,8 +243,8 @@ const NovaMiniChat: React.FC = () => {
                                 <div className="flex items-start gap-2 mb-3">
                                     <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
                                         <Image
-                                            src="/Icon.svg"
-                                            alt="Upgrade AI"
+                                            src="/spirit-monkey-icon.png"
+                                            alt="Spirit Monkey Assistant"
                                             width={24}
                                             height={24}
                                             className="object-cover"

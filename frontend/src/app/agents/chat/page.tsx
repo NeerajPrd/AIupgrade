@@ -246,7 +246,7 @@ const AgentChatInner: React.FC = () => {
     <div className="flex flex-col h-screen max-w-7xl justify-center mx-auto">
       <header className="border-b dark:border-gray-700 p-4 md:py-2.5 md:px-4 flex items-center justify-between bg-white dark:bg-gray-800 shadow-sm">
         <div className="flex items-center space-x-4">
-          <img src="/Icon.svg" alt="AI Icon" className="w-8 h-8" />
+          <img src="/spirit-monkey-icon.png" alt="AI Icon" className="w-8 h-8" />
           {selectedAgent && (
             <span className="font-medium text-lg">
               {selectedAgent.agent_name}

@@ -204,7 +204,7 @@ export default function ForgotPage() {
         <div className="absolute -top-16 left-1/2 transform -translate-x-1/2 bg-white dark:bg-gray-800 rounded-full p-4 shadow-lg">
           <div className="flex items-center justify-center h-16 w-16">
             <Image
-              src="/Icon.svg"
+              src="/spirit-monkey-icon.png"
               alt="logo"
               height={32}
               width={32}

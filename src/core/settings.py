@@ -104,7 +104,7 @@ class Settings(BaseSettings):
     FRONTEND_HOST: str = "*"
 
     API_V1_STR: str = "/api/v1"
-    PROJECT_NAME: str = "Fagoon Agents Workflow"
+    PROJECT_NAME: str = "Spirit Monkey API"
     API_SWAGGER_PATH: str = "docs"
     BACKEND_CORS_ORIGINS: Annotated[
         list[AnyUrl] | str, BeforeValidator(parse_cors)

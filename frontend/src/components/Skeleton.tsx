@@ -5,7 +5,7 @@ const Skeleton = () => {
     <div className="w-[80%] mt-10 pt-4">
       <div className="font-normal flex items-center gap-[10px] pb-[10px]">
         <img
-          src="/Icon.svg"
+          src="/spirit-monkey-icon.png"
           alt="icon"
           className="w-[25px] h-[25px] animate-spin"
         />

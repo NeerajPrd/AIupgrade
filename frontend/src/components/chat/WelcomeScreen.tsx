@@ -34,14 +34,14 @@ export const WelcomeScreen = () => {
       {/* HEADER */}
       <div className="flex flex-col gap-1">
 
-        <div className="text-lg md:text-4xl font-semibold text-black dark:text-[#F6F7FB]">
+        <div className="text-lg md:text-4xl font-semibold text-black dark:text-brand-50">
           {getGreeting()}, {user?.name ? user.name.split(" ")[0] : "Guest"}!
 
         </div>
 
         {!loadingModels && modelList.length === 0 ? (
-          <div className="mt-4 p-6 gap-3 bg-white/40 flex-1 backdrop-blur-3xl border border-gray-100 dark:border-gray-700  dark:bg-[#2f2f2f] rounded-lg shadow-md flex flex-col items-start">
-            <div className="text-sm md:text-lg font-medium text-black dark:text-[#F6F7FB]">
+          <div className="mt-4 p-6 gap-3 bg-white/40 flex-1 backdrop-blur-3xl border border-gray-100 dark:border-gray-700  dark:bg-navy-800 rounded-lg shadow-md flex flex-col items-start">
+            <div className="text-sm md:text-lg font-medium text-black dark:text-brand-50">
               Add API model to begin chatting.
             </div>
             <Button
@@ -51,7 +51,7 @@ export const WelcomeScreen = () => {
             </Button>
           </div>
         ) : (
-          <div className="text-sm md:text-xl text-black dark:text-[#F6F7FB]">
+          <div className="text-sm md:text-xl text-black dark:text-brand-50">
             How can I help you today?
           </div>
         )}
@@ -83,7 +83,7 @@ export const WelcomeScreen = () => {
                   key={chat.conversation_id}
                   whileHover={{ scale: 1.01 }}
                   onClick={() => router.push(`/c/${chat.conversation_id}`)}
-                  className="flex items-start gap-3 p-3 rounded-xl bg-white/40 dark:bg-[#2f2f2f] border border-gray-200 dark:border-gray-700 cursor-pointer"
+                  className="flex items-start gap-3 p-3 rounded-xl bg-white/40 dark:bg-navy-800 border border-gray-200 dark:border-gray-700 cursor-pointer"
                 >
                   <MessageSquare className="text-gray-500 w-4 h-4 mt-0.5 flex-shrink-0" />
 

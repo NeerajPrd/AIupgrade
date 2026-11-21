@@ -5,13 +5,13 @@ export const TypingIndicator = () => {
     <div className="p-4 w-[80%] ">
       <div className="font-normal flex items-center gap-[10px] pb-[10px]">
         <Image
-          src="/Icon.svg"
+          src="/spirit-monkey-icon.png"
           alt="icon"
           className="w-[25px] h-[25px] animate-spin"
           width={25}
           height={25}
         />
-        Upgrade:
+        Spirit Monkey:
       </div>
       <div className="flex flex-col gap-[3px] items-center">
         <div className="flex w-full gap-[5px]">

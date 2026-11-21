@@ -55,7 +55,7 @@ export function EdgeSettingsPanel() {
                 placeholder="e.g., JSON response, payload..."
                 value={label}
                 onChange={(e) => handleUpdate({ label: e.target.value })}
-                className="focus-visible:ring-[#FB923C]"
+                className="focus-visible:ring-brand-500"
               />
             </div>
 
@@ -87,7 +87,7 @@ export function EdgeSettingsPanel() {
               <select
                 value={merge_strategy}
                 onChange={(e) => handleUpdate({ merge_strategy: e.target.value })}
-                className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-[#FB923C]"
+                className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-brand-500"
               >
                 <option value="concatenate">Concatenate (Default)</option>
                 <option value="array">Convert to Array</option>
@@ -128,18 +128,18 @@ export function EdgeSettingsPanel() {
               )}
 
               {/* Add Mapping Row Form */}
-              <div className="space-y-2 bg-[#FB923C]/5 p-3 rounded-lg border border-dashed border-[#FB923C]/50">
-                <p className="text-xs font-semibold text-[#FB923C]">Add Explicit Mapping</p>
+              <div className="space-y-2 bg-brand-500/5 p-3 rounded-lg border border-dashed border-brand-500/50">
+                <p className="text-xs font-semibold text-brand-500">Add Explicit Mapping</p>
                 <div className="grid grid-cols-2 gap-2">
                   <Input
                     placeholder="source_field"
                     id="mapping-source"
-                    className="h-8 text-xs focus-visible:ring-[#FB923C]"
+                    className="h-8 text-xs focus-visible:ring-brand-500"
                   />
                   <Input
                     placeholder="target_field"
                     id="mapping-target"
-                    className="h-8 text-xs focus-visible:ring-[#FB923C]"
+                    className="h-8 text-xs focus-visible:ring-brand-500"
                   />
                 </div>
                 <div className="flex gap-2">
@@ -147,11 +147,11 @@ export function EdgeSettingsPanel() {
                     placeholder="transform (e.g. json, text)"
                     id="mapping-transform"
                     defaultValue="json"
-                    className="h-8 text-xs focus-visible:ring-[#FB923C]"
+                    className="h-8 text-xs focus-visible:ring-brand-500"
                   />
                   <Button
                     size="sm"
-                    className="bg-[#FB923C] hover:bg-[#FB923C]/80 text-white h-8 shrink-0 text-xs px-2"
+                    className="bg-brand-500 hover:bg-brand-500/80 text-white h-8 shrink-0 text-xs px-2"
                     onClick={() => {
                       const srcInput = document.getElementById('mapping-source') as HTMLInputElement;
                       const tgtInput = document.getElementById('mapping-target') as HTMLInputElement;
@@ -198,7 +198,7 @@ export function EdgeSettingsPanel() {
       <div className="p-4 border-t shrink-0">
         <Button
           variant="outline"
-          className="w-full border-[#FB923C] hover:bg-[#FB923C]/10 dark:text-white"
+          className="w-full border-brand-500 hover:bg-brand-500/10 dark:text-white"
           onClick={() => setSelectedEdge(null)}
         >
           Close Settings

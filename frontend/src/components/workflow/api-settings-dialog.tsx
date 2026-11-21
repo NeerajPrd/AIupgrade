@@ -154,16 +154,16 @@ export function ApiSettingsDialog({ workflowId }: ApiSettingsDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="hover:bg-[#FB923C]/20 shrink-0 border-[#FB923C]/50 h-9 transition-all hover:scale-105 active:scale-95">
-          <Key className="h-4 w-4 mr-2 text-[#FB923C]" />
+        <Button variant="outline" className="hover:bg-brand-500/20 shrink-0 border-brand-500/50 h-9 transition-all hover:scale-105 active:scale-95">
+          <Key className="h-4 w-4 mr-2 text-brand-500" />
           <span>API<span className="hidden md:inline"> Integration</span></span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-xl bg-[#0b0b0d] border-zinc-800/80 text-foreground p-6 rounded-2xl shadow-2xl">
+      <DialogContent className="max-w-xl bg-navy-950 border-zinc-800/80 text-foreground p-6 rounded-2xl shadow-2xl">
         <DialogHeader className="border-b border-zinc-900 pb-4">
           <DialogTitle className="flex items-center justify-between text-lg font-bold text-zinc-100">
             <span className="flex items-center gap-2">
-              <span className="p-1.5 bg-[#FB923C]/10 rounded-lg text-[#FB923C]">
+              <span className="p-1.5 bg-brand-500/10 rounded-lg text-brand-500">
                 <Key className="h-4.5 w-4.5" />
               </span>
               Workflow API Integration
@@ -179,13 +179,13 @@ export function ApiSettingsDialog({ workflowId }: ApiSettingsDialogProps) {
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <Loader2 className="h-9 w-9 animate-spin text-[#FB923C]" />
+            <Loader2 className="h-9 w-9 animate-spin text-brand-500" />
             <p className="text-xs text-zinc-400 font-mono">Fetching active API configuration...</p>
           </div>
         ) : apiInfo ? (
           <div className="space-y-5 pt-4">
             {/* Slug & API Key Card Wrapper */}
-            <div className="bg-[#121215] border border-zinc-900 rounded-xl p-4 space-y-4">
+            <div className="bg-navy-950 border border-zinc-900 rounded-xl p-4 space-y-4">
               {/* Slug Info */}
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold text-zinc-400 tracking-wider uppercase">Workflow Slug</label>
@@ -245,13 +245,13 @@ export function ApiSettingsDialog({ workflowId }: ApiSettingsDialogProps) {
             </div>
 
             {/* Webhook Endpoint Card */}
-            <div className="bg-[#121215] border border-zinc-900 rounded-xl p-4 space-y-2">
+            <div className="bg-navy-950 border border-zinc-900 rounded-xl p-4 space-y-2">
               <div className="flex justify-between items-center">
                 <label className="text-[11px] font-bold text-zinc-400 tracking-wider uppercase">Webhook Endpoint URL</label>
                 <Button 
                   variant="link" 
                   size="sm" 
-                  className="h-auto p-0 text-[11px] text-[#FB923C] hover:text-[#FB923C]/80"
+                  className="h-auto p-0 text-[11px] text-brand-500 hover:text-brand-500/80"
                   onClick={() => handleCopy(getExecutionUrl(), setCopiedUrl)}
                 >
                   {copiedUrl ? "Copied!" : "Copy URL"}
@@ -281,8 +281,8 @@ export function ApiSettingsDialog({ workflowId }: ApiSettingsDialogProps) {
           <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
             {/* Pulsing visual indicator */}
             <div className="relative mb-6">
-              <div className="absolute inset-0 bg-[#FB923C]/20 rounded-full blur-xl animate-pulse" />
-              <div className="relative p-5 bg-[#FB923C]/5 border border-[#FB923C]/15 rounded-2xl text-[#FB923C]">
+              <div className="absolute inset-0 bg-brand-500/20 rounded-full blur-xl animate-pulse" />
+              <div className="relative p-5 bg-brand-500/5 border border-brand-500/15 rounded-2xl text-brand-500">
                 <Key className="h-10 w-10" />
               </div>
             </div>
@@ -290,7 +290,7 @@ export function ApiSettingsDialog({ workflowId }: ApiSettingsDialogProps) {
             <div className="space-y-2 mb-6">
               <h4 className="font-bold text-base text-zinc-100 flex items-center justify-center gap-1.5">
                 Configure Workflow API
-                <Sparkles className="h-4 w-4 text-[#FB923C]" />
+                <Sparkles className="h-4 w-4 text-brand-500" />
               </h4>
               <p className="text-xs text-zinc-400 max-w-sm leading-relaxed">
                 Connect and trigger this AI workflow programmatically from external apps, servers, or webhooks using a secure API Key and personalized Slug endpoint.
@@ -300,7 +300,7 @@ export function ApiSettingsDialog({ workflowId }: ApiSettingsDialogProps) {
             <Button 
               disabled={actionLoading}
               onClick={handleGenerate}
-              className="w-full bg-[#FB923C] hover:bg-[#FB923C]/90 text-white font-bold flex items-center justify-center gap-2 h-10 shadow-lg shadow-[#FB923C]/10 transition-transform active:scale-98"
+              className="w-full bg-brand-500 hover:bg-brand-500/90 text-white font-bold flex items-center justify-center gap-2 h-10 shadow-lg shadow-brand-500/10 transition-transform active:scale-98"
             >
               {actionLoading ? (
                 <>

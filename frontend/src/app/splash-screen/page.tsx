@@ -58,7 +58,7 @@ const SplashScreen = () => {
   return (
     <div
       className={`relative h-screen flex flex-col items-center justify-center 
-        bg-white text-black dark:bg-[#1a1a1a] dark:text-white`}
+        bg-white text-black dark:bg-navy-900 dark:text-white`}
     >
       {renderBackgroundBlur()}
       <div className="w-full max-w-md px-6 sm:px-12">
@@ -71,17 +71,17 @@ const SplashScreen = () => {
               transition={{ delay: 0.3 }}
               className="absolute top-1/2 left-1/2 transform -translate-x-1/2 
                 -translate-y-1/2 rounded-lg p-8 sm:p-10 shadow-lg 
-                bg-white dark:bg-[#1a1a1a] border border-gray-200 
+                bg-white dark:bg-navy-900 border border-gray-200 
                 dark:border-gray-600"
             >
               <div className="flex items-center gap-3 justify-center mb-6">
                 <Image
-                  src="/Icon.svg"
-                  alt="Upgrade logo"
+                  src="/spirit-monkey-icon.png"
+                  alt="Spirit Monkey"
                   height={32}
                   width={32}
                 />
-                <span className="text-2xl font-semibold">Upgrade</span>
+                <span className="text-2xl font-semibold">Spirit Monkey</span>
               </div>
               <div className="text-center mb-6">
                 <h2 className="text-2xl font-bold">Let&apos;s Get Started!</h2>
@@ -102,13 +102,13 @@ const SplashScreen = () => {
                     minLength={2}
                     className="border rounded-l-lg p-3 flex-grow focus:ring-0
                       border-gray-300 dark:border-gray-600 
-                      dark:bg-[#1a1a1a] dark:text-white"
+                      dark:bg-navy-900 dark:text-white"
                   />
                   <button
                     type="submit"
                     onClick={handleSetName}
-                    className="bg-[#7000ff] text-white rounded-r-lg p-3 
-                      flex items-center justify-center hover:bg-[#5e00d8] 
+                    className="bg-brand-600 text-white rounded-r-lg p-3 
+                      flex items-center justify-center hover:bg-brand-700 
                       transition-colors"
                   >
                     <GrFormNext aria-hidden="true" />
@@ -118,16 +118,16 @@ const SplashScreen = () => {
               <div className="text-center text-sm space-y-4">
                 <Link
                   href="/login"
-                  className="hover:underline text-[#7000ff] 
-                    dark:text-[#9370db]"
+                  className="hover:underline text-brand-600 
+                    dark:text-brand-400"
                 >
                   Already have an account? Log In
                 </Link>
                 <br />
                 <Link
                   href="/signup"
-                  className="hover:underline text-[#7000ff] 
-                    dark:text-[#9370db]"
+                  className="hover:underline text-brand-600 
+                    dark:text-brand-400"
                 >
                   Register Now! Sign Up
                 </Link>
@@ -159,7 +159,7 @@ const SplashScreen = () => {
                     border-red-300 dark:border-red-600"
                 />
                 <h1 className="text-4xl font-semibold dark:text-white">
-                  Upgrade
+                  Spirit Monkey
                 </h1>
               </motion.div>
               <motion.p
@@ -168,7 +168,7 @@ const SplashScreen = () => {
                 transition={{ delay: 1.2 }}
                 className="text-xl mb-8 leading-relaxed dark:text-white"
               >
-                Welcome to <strong>Upgrade!</strong> I&apos;m here to assist
+                Welcome to <strong>Spirit Monkey!</strong> I&apos;m here to assist
                 you.
               </motion.p>
               <motion.div
@@ -180,20 +180,20 @@ const SplashScreen = () => {
                 <button
                   onClick={() => setNextPressed(true)}
                   className="w-full text-white font-bold rounded-lg py-3 
-                    bg-[#7000ff] hover:bg-[#5e00d8] transition-colors"
+                    bg-brand-600 hover:bg-brand-700 transition-colors"
                 >
                   Next
                 </button>
                 <Link
                   href="/login"
-                  className="block text-[#7000ff] dark:text-[#9370db] 
+                  className="block text-brand-600 dark:text-brand-400 
                     hover:underline"
                 >
                   Already have an account? Log In
                 </Link>
                 <Link
                   href="/signup"
-                  className="block text-[#7000ff] dark:text-[#9370db] 
+                  className="block text-brand-600 dark:text-brand-400 
                     hover:underline"
                 >
                   Register Now! Sign Up

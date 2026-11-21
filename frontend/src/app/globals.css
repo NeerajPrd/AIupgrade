@@ -2,137 +2,135 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Root Variables */
+/* Root Variables
+   Spirit Monkey theme. Colours come from the logo (frontend/public/spirit-monkey-logo.png)
+   and spirit-monkey.com (marketing-site/index.html):
+     logo blue  #1858e4  -> --primary (light mode), tailwind brand-600
+     site blue  #3b82f6  -> tailwind brand-500, focus rings in dark mode
+     logo sky   #1898e8  -> gradient end, tailwind brand-sky
+     logo navy  #000234  -> text colour hue, dark-mode backgrounds
+   Change the theme here (and the palettes in tailwind.config.ts), not page by page. */
 @layer base {
   :root {
     /* Core colors */
     --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    --foreground: 232 55% 13%;
 
     /* UI Components */
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --card-foreground: 232 55% 13%;
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
+    --popover-foreground: 232 55% 13%;
 
     /* Brand colors */
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
+    --primary: 221 81% 49%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 214 100% 97%;
+    --secondary-foreground: 222 70% 30%;
 
     /* Functional colors */
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
+    --muted: 214 60% 96%;
+    --muted-foreground: 222 16% 40%;
+    --accent: 214 100% 95%;
+    --accent-foreground: 222 75% 30%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
 
     /* Form elements */
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 10% 3.9%;
+    --border: 216 33% 89%;
+    --input: 216 33% 86%;
+    --ring: 221 81% 49%;
 
-    /* Chart colors */
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    /* Chart colors (blues first) */
+    --chart-1: 221 81% 49%;
+    --chart-2: 204 82% 50%;
+    --chart-3: 252 69% 50%;
+    --chart-4: 190 75% 42%;
+    --chart-5: 232 55% 30%;
 
     /* Other */
     --radius: 0.5rem;
-    --scrollbar-thumb: #f29571;
-    --scrollbar-thumb-hover: #ec612c;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --scrollbar-thumb: #93c5fd;
+    --scrollbar-thumb-hover: #3b82f6;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 228 30% 25%;
+    --sidebar-primary: 221 81% 49%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 214 100% 96%;
+    --sidebar-accent-foreground: 222 75% 30%;
+    --sidebar-border: 216 33% 91%;
+    --sidebar-ring: 221 81% 49%;
   }
 
   .dark {
-    /* Core colors */
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
+    /* Core colors: navy, from the logo's outline colour */
+    --background: 233 62% 8%;
+    --foreground: 214 40% 95%;
 
     /* UI Components */
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
+    --card: 232 52% 12%;
+    --card-foreground: 214 40% 95%;
+    --popover: 232 52% 12%;
+    --popover-foreground: 214 40% 95%;
 
     /* Brand colors */
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 231 42% 18%;
+    --secondary-foreground: 214 40% 95%;
 
     /* Functional colors */
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
+    --muted: 231 42% 16%;
+    --muted-foreground: 220 22% 70%;
+    --accent: 229 45% 21%;
+    --accent-foreground: 214 40% 95%;
+    --destructive: 0 63% 45%;
+    --destructive-foreground: 0 0% 100%;
 
     /* Form elements */
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    --border: 231 36% 22%;
+    --input: 231 36% 25%;
+    --ring: 217 91% 60%;
 
     /* Chart colors */
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    --chart-1: 217 91% 60%;
+    --chart-2: 199 89% 55%;
+    --chart-3: 252 80% 70%;
+    --chart-4: 186 70% 50%;
+    --chart-5: 214 40% 85%;
 
     /* Other */
-    --scrollbar-thumb: #cc7357;
-    --scrollbar-thumb-hover: #ffa755;
+    --scrollbar-thumb: #2a3a7a;
+    --scrollbar-thumb-hover: #3b82f6;
 
-    /* --code: #374151; */
-
-    --sidebar-background: 240 5.9% 10%;
-
-    --sidebar-foreground: 240 4.8% 95.9%;
-
-    --sidebar-primary: 224.3 76.3% 48%;
-
+    --sidebar-background: 232 55% 11%;
+    --sidebar-foreground: 214 32% 88%;
+    --sidebar-primary: 221 83% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
-
-    --sidebar-accent: 240 3.7% 15.9%;
-
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-
-    --sidebar-border: 240 3.7% 15.9%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 229 45% 19%;
+    --sidebar-accent-foreground: 214 40% 95%;
+    --sidebar-border: 231 36% 20%;
+    --sidebar-ring: 217 91% 60%;
   }
 }
 
 @keyframes glow {
   0% {
-    box-shadow: 0 0 5px rgba(235, 94, 40, 0.5);
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
   }
 
   50% {
-    box-shadow: 0 0 15px rgba(235, 94, 40, 1);
+    box-shadow: 0 0 15px rgba(59, 130, 246, 1);
   }
 
   100% {
-    box-shadow: 0 0 5px rgba(235, 94, 40, 0.5);
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
   }
 }
 
 .glow-effect {
   animation: glow 300ms ease-out;
-  border-color: rgba(235, 94, 40, 0.9);
+  border-color: rgba(59, 130, 246, 0.9);
 }
 
 /* Base Styles */
@@ -290,13 +288,13 @@
 } */
 
 a {
-  color: #f29571;
+  color: #3b82f6;
   text-decoration: none;
   transition: color 0.2s ease-in-out;
 }
 
 a:hover {
-  color: #ec612c;
+  color: #1858e4;
 }
 
 .scrollbar-hide {
@@ -348,7 +346,7 @@ a:hover {
 pre div {
   font-family: "Fira Code", monospace;
   overflow: auto;
-  scrollbar-color: #191919 #cccccc;
+  scrollbar-color: #2a3a7a #e2e8f0;
 }
 
 /* table,
@@ -501,7 +499,7 @@ p .think {
   /* justify-content: space-between; */
   /* align-items: center; */
   /* padding: 0.5rem 1rem; */
-  border-bottom: 1px #ec612c;
+  border-bottom: 1px #1858e4;
   font-size: 12px;
   line-height: 1.1;
 }
@@ -536,4 +534,11 @@ p {
   body {
     @apply bg-background text-foreground;
   }
+}
+/* The Spirit Monkey icon is drawn in navy: in dark mode give it a white disc so it stays visible
+   (applies everywhere the icon is used, including Next's optimised /_next/image URLs). */
+.dark img[src*="spirit-monkey-icon"] {
+  background-color: #ffffff;
+  border-radius: 9999px;
+  padding: 2px;
 }

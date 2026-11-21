@@ -13,7 +13,7 @@ const ProfileUpdate = () => {
   const [formData, setFormData] = useState({
     name: "John Doe",
     email: "john@example.com",
-    profileImage: "/Icon.svg",
+    profileImage: "/spirit-monkey-icon.png",
     bio: "Software developer passionate about creating user-friendly applications.",
     location: "San Francisco, CA",
     website: "https://johndoe.dev",
@@ -94,7 +94,7 @@ const ProfileUpdate = () => {
     setFormData({
       name: "John Doe",
       email: "john@example.com",
-      profileImage: "/Icon.svg",
+      profileImage: "/spirit-monkey-icon.png",
       bio: "Software developer passionate about creating user-friendly applications.",
       location: "San Francisco, CA",
       website: "https://johndoe.dev",

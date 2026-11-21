@@ -245,6 +245,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         v1 = system_setting.API_V1_STR.rstrip("/")
         dynamic_allowed = [
             f"{v1}/auth/login",
+            f"{v1}/auth/options",
             f"{v1}/auth/register",
             f"{v1}/auth/forgot-password",
             f"{v1}/auth/refresh-token",

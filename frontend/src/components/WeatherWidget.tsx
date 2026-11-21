@@ -174,7 +174,7 @@ function WeatherContent() {
 
 export default function WeatherWidget() {
   return (
-    <div className="bg-white/40 flex-1 backdrop-blur-3xl border border-gray-100 dark:border-gray-700  dark:bg-[#2f2f2f] rounded-lg shadow-md p-6 flex flex-col justify-between">
+    <div className="bg-white/40 flex-1 backdrop-blur-3xl border border-gray-100 dark:border-gray-700  dark:bg-navy-800 rounded-lg shadow-md p-6 flex flex-col justify-between">
       <Suspense fallback={<div className="h-[120px]" />}>
         <WeatherContent />
       </Suspense>

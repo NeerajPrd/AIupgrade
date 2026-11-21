@@ -14,10 +14,10 @@ import { cn } from "@/lib/utils";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, LoginFormData } from "@/lib/schemas/auth";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { login } from "@/lib/api/auth";
+import { getAuthOptions, login } from "@/lib/api/auth";
 import { showErrorToast, showSuccessToast } from "@/utils/toast";
 
 const AI_MESSAGES = [
@@ -63,6 +63,15 @@ const LoginPage = () => {
   });
 
 
+  // "Sign Up" is offered only when the server allows public signup (hidden while loading or on error).
+  const { data: authOptions } = useQuery({
+    queryKey: ["auth-options"],
+    queryFn: getAuthOptions,
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+  });
+  const signupOpen = authOptions?.public_signup === true;
+
   const loginMutation = useMutation({
     mutationFn: login,
     onSuccess: async (response) => {
@@ -90,60 +99,42 @@ const LoginPage = () => {
     loginMutation.error?.message;
 
   return (
-    <div className="min-h-screen w-full flex dark:bg-gray-900">
-      {/* Left Section */}
-      <div className="hidden lg:block lg:w-1/2 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-purple-600/20 to-blue-600/20 z-10" />
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: "url('/bg.webp')" }}
-        />
-        <div className="absolute bottom-8 left-8 flex gap-8 text-sm text-white/80 z-20">
-          <a
-            href="/privacy-policy"
-            className="hover:text-white transition-colors"
-          >
+    <div className="min-h-screen w-full flex bg-background">
+      {/* Left: Spirit Monkey brand panel */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col items-center justify-center bg-gradient-to-br from-brand-sky via-brand-600 to-brand-900 dark:to-navy-950 text-white">
+        <div className="absolute -top-24 -right-24 h-80 w-80 rounded-full bg-white/10 blur-2xl" />
+        <div className="absolute -bottom-32 -left-20 h-96 w-96 rounded-full bg-brand-sky/30 blur-3xl" />
+        <div className="relative z-10 flex flex-col items-center text-center px-12">
+          <div className="rounded-full bg-white p-5 shadow-2xl shadow-navy/30">
+            <Image src="/spirit-monkey-icon.png" alt="Spirit Monkey" width={132} height={132} priority />
+          </div>
+          <h2 className="mt-8 text-4xl font-bold tracking-tight">Spirit Monkey</h2>
+          <p className="mt-3 text-lg font-medium text-white/90">24/7 AI Sales &amp; Support Agents</p>
+        </div>
+        <div className="absolute bottom-8 left-0 right-0 z-10 flex justify-center gap-8 text-sm">
+          <a href="/privacy-policy" className="text-white underline-offset-4 hover:underline">
             Privacy Policy
           </a>
-          <a
-            href="/terms-and-conditions"
-            className="hover:text-white transition-colors"
-          >
+          <a href="/terms-and-conditions" className="text-white underline-offset-4 hover:underline">
             Terms of Service
           </a>
         </div>
       </div>
 
-      {/* Right Section */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-12 relative">
-        <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:40px_40px] dark:bg-grid-white/[0.05]" />
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-100/30 via-transparent to-purple-100/30 dark:from-blue-900/30 dark:to-purple-900/30 backdrop-blur-3xl" />
-
-        <div className="relative w-full max-w-md mx-auto space-y-8">
-          {/* <AiMessage
-            message={AI_MESSAGES[aiMessageIndex]}
-            className="absolute -top-20 left-1/2 -translate-x-1/2 transform"
-          /> */}
-
+      {/* Right: sign-in form */}
+      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-6 lg:p-12">
+        <div className="w-full max-w-md mx-auto space-y-8">
           <div className="text-center space-y-2">
-            <div className="flex justify-center mb-8">
-              <Image
-                src="/Icon.svg"
-                alt="Logo"
-                width={40}
-                height={40}
-                className="animate-pulse"
-                priority
-              />
+            <div className="flex flex-col items-center gap-2 mb-6">
+              <Image src="/spirit-monkey-icon.png" alt="Spirit Monkey" width={64} height={64} priority />
+              <span className="lg:hidden text-lg font-semibold text-foreground">Spirit Monkey</span>
             </div>
-            <h1 className="text-3xl font-bold dark:text-white">Welcome Back</h1>
-            <p className="text-gray-600 dark:text-gray-300">
-              Access your AI-powered workspace
-            </p>
+            <h1 className="text-3xl font-bold text-foreground">Welcome Back</h1>
+            <p className="text-muted-foreground">Sign in to manage your AI assistants</p>
           </div>
 
           {errorMessage && (
-            <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-sm">
+            <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
               {errorMessage}
             </div>
           )}
@@ -155,8 +146,8 @@ const LoginPage = () => {
                 type="email"
                 placeholder="Email address"
                 error={errors.email?.message}
-                leftIcon={<HiOutlineMail className="text-gray-400" />}
-                className="pl-10 pr-4 py-3 h-12 rounded-lg border bg-white/50 dark:bg-black/50 border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 transition-all"
+                leftIcon={<HiOutlineMail className="text-muted-foreground" />}
+                className="pl-10 pr-4 py-3 h-12 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring transition-all"
               />
 
               <Input
@@ -164,8 +155,8 @@ const LoginPage = () => {
                 type="password"
                 placeholder="Password"
                 error={errors.password?.message}
-                leftIcon={<RiLockPasswordLine className="text-gray-400" />}
-                className="pl-10 pr-12 py-3 h-12 rounded-lg border bg-white/50 dark:bg-black/50 border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 transition-all"
+                leftIcon={<RiLockPasswordLine className="text-muted-foreground" />}
+                className="pl-10 pr-12 py-3 h-12 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring transition-all"
               />
             </div>
 
@@ -175,17 +166,15 @@ const LoginPage = () => {
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="rounded border-input accent-[hsl(var(--primary))]"
                 />
-                <span className="text-sm text-gray-600 dark:text-gray-300">
-                  Remember me
-                </span>
+                <span className="text-sm text-muted-foreground">Remember me</span>
               </label>
 
               <button
                 type="button"
                 onClick={() => router.push("/forgot")}
-                className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                className="text-sm font-medium text-primary hover:underline underline-offset-4"
               >
                 Forgot password?
               </button>
@@ -193,30 +182,39 @@ const LoginPage = () => {
 
             <Button
               type="submit"
-              variant="gradient"
               size="lg"
               disabled={loginMutation.isPending}
-              className="w-full rounded-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              className="w-full h-12 rounded-lg text-base font-semibold"
             >
               {loginMutation.isPending ? "Signing in..." : "Sign In"}
             </Button>
 
-            <div className="text-center space-y-2">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+            {signupOpen && (
+              <p className="text-center text-sm text-muted-foreground">
                 Don&apos;t have an account?{" "}
                 <button
                   type="button"
                   onClick={() => router.push("/signup")}
-                  className="text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                  className="font-medium text-primary hover:underline underline-offset-4"
                 >
                   Sign Up
                 </button>
               </p>
-            </div>
+            )}
           </form>
+
+          {/* Policy links for phones and tablets (the brand panel is hidden there) */}
+          <div className="lg:hidden flex justify-center gap-6 text-sm">
+            <a href="/privacy-policy" className="text-foreground/80 underline underline-offset-4 hover:text-primary">
+              Privacy Policy
+            </a>
+            <a href="/terms-and-conditions" className="text-foreground/80 underline underline-offset-4 hover:text-primary">
+              Terms of Service
+            </a>
+          </div>
         </div>
       </div>
-    </div >
+    </div>
   );
 };
 

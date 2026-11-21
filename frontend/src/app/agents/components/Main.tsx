@@ -190,7 +190,7 @@
 //                   value={url}
 //                   onChange={(e) => handleUrlChange(index, e.target.value)}
 //                   placeholder="Enter website URL"
-//                   className="flex-1 p-3 border border-gray-200 rounded-lg dark:bg-[#1a1a1a] dark:border-gray-600 dark:text-white"
+//                   className="flex-1 p-3 border border-gray-200 rounded-lg dark:bg-navy-900 dark:border-gray-600 dark:text-white"
 //                 />
 //                 {urls.length > 1 && (
 //                   <button
@@ -286,7 +286,7 @@
 //               value={name}
 //               onChange={(e) => setName(e.target.value)}
 //               onKeyDown={(e) => e.key === "Enter" && setNextPressed(true)}
-//               className="rounded-l-lg p-3 flex-grow focus:ring-0 dark:bg-[#1a1a1a] dark:text-white"
+//               className="rounded-l-lg p-3 flex-grow focus:ring-0 dark:bg-navy-900 dark:text-white"
 //             />
 //             <button
 //               onClick={() => setNextPressed(true)}
@@ -599,7 +599,7 @@ const Main = ({ onClose }: { onClose: () => void }) => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && setNextPressed(true)}
-              className="rounded-l-lg p-3 flex-grow focus:ring-0 dark:bg-[#1a1a1a] dark:text-white"
+              className="rounded-l-lg p-3 flex-grow focus:ring-0 dark:bg-navy-900 dark:text-white"
             />
             <button
               onClick={() => setNextPressed(true)}
@@ -704,7 +704,7 @@ const Main = ({ onClose }: { onClose: () => void }) => {
                     value={url}
                     onChange={(e) => handleUrlChange(index, e.target.value)}
                     placeholder="Enter website URL"
-                    className="flex-1 p-3 border border-gray-200 rounded-lg dark:bg-[#1a1a1a] dark:border-gray-600 dark:text-white"
+                    className="flex-1 p-3 border border-gray-200 rounded-lg dark:bg-navy-900 dark:border-gray-600 dark:text-white"
                   />
                   {urls.length > 1 && (
                     <button

@@ -5,23 +5,15 @@ interface PoweredByProps {
 }
 
 export function PoweredBy({ className = "" }: PoweredByProps) {
-
-  const handleNavigate = () => {
-    window.open("https://fagoonai.com", "_blank", "noopener,noreferrer");
-  };
-
   return (
-    <div
-      className={`flex items-center justify-center gap-1.5 text-[10.5px] font-sans text-white dark:text-muted-foreground/60 select-none cursor-pointer ${className}`}
-      onClick={handleNavigate}
+    <a
+      href="https://spirit-monkey.com"
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`flex items-center justify-center gap-1 text-[11px] font-sans text-muted-foreground select-none hover:text-foreground transition-colors ${className}`}
     >
       Powered by
-      <strong className="font-bold text-foreground/80 dark:text-zinc-300 ">
-        Fagoon
-        <span className='text-red-600 px-1'>
-          AI
-        </span>
-      </strong>
-    </div>
+      <strong className="font-bold text-brand-600 dark:text-brand-400">Spirit Monkey</strong>
+    </a>
   );
 }

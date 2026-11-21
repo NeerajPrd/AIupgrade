@@ -192,7 +192,7 @@ const ChatMessageOutput = ({ msg }: { msg: Message }) => {
                             className={`${isUser
                                 ? " rounded-2xl rounded-tr-sm "
                                 : " rounded-2xl rounded-tl-sm "
-                                }bg-slate-100 dark:bg-[#1E1E1E] text-black dark:text-gray-100  border-slate-200/40 dark:border-neutral-800  px-4 py-2.5 shadow-sm max-w-2xl transition-all duration-200`}
+                                }bg-slate-100 dark:bg-navy-900 text-black dark:text-gray-100  border-slate-200/40 dark:border-neutral-800  px-4 py-2.5 shadow-sm max-w-2xl transition-all duration-200`}
                         >
                             {/* Image */}
                             {imageUrl && imageUrl !== "" && (

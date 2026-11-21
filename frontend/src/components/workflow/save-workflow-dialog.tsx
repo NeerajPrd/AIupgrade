@@ -55,7 +55,7 @@ export function SaveWorkflowDialog() {
           <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full focus-visible:ring-[#FB923C] shrink-0"
+            className="w-full focus-visible:ring-brand-500 shrink-0"
           />
           {isSaved ?
             <Button onClick={handleUpdate} className="w-full">
