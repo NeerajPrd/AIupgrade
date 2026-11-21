@@ -206,3 +206,18 @@ def test_request_bodies_are_redacted_for_logs():
 def test_tokens_in_query_strings_are_redacted_for_logs():
     safe = policy.redact_query_for_log({"access_token": "eyJ...", "token": "eyJ...", "channel": "exec:1", "code": "4/0A"})
     assert safe == {"access_token": policy.REDACTED, "token": policy.REDACTED, "channel": "exec:1", "code": policy.REDACTED}
+
+
+# ---------------------------------------------------------------- login page: is signup open?
+
+def test_auth_options_is_public_and_reports_the_signup_switch(mw, monkeypatch):
+    from src.api.v1.routers.authentication import auth_router
+
+    assert mw._is_public_path("/api/v1/auth/options") is True
+    app = FastAPI()
+    app.include_router(auth_router.router, prefix="/auth")
+    client = TestClient(app)
+    monkeypatch.setattr(auth_router.policy, "public_signup_allowed", lambda: False)
+    assert client.get("/auth/options").json() == {"public_signup": False}
+    monkeypatch.setattr(auth_router.policy, "public_signup_allowed", lambda: True)
+    assert client.get("/auth/options").json() == {"public_signup": True}

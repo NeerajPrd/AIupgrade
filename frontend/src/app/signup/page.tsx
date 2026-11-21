@@ -152,7 +152,7 @@ export default function SignupPage() {
           <div className="text-center space-y-2">
             <div className="flex justify-center mb-8">
               <Image
-                src="/Icon.svg"
+                src="/spirit-monkey-icon.png"
                 alt="Logo"
                 width={40}
                 height={40}

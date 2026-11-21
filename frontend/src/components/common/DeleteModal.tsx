@@ -43,7 +43,7 @@ export function DeleteModal({
             <Dialog.Portal>
                 <Dialog.Overlay className="fixed inset-0 z-[90] bg-black/40 backdrop-blur-sm animate-in fade-in-0" />
 
-                <Dialog.Content className="fixed left-1/2 top-1/2 z-[100] w-[92vw] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#2e2e2e] p-6 shadow-2xl outline-none">
+                <Dialog.Content className="fixed left-1/2 top-1/2 z-[100] w-[92vw] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-navy-800 p-6 shadow-2xl outline-none">
                     <div className="flex items-start gap-4">
                         <div className="flex h-11 w-11 items-center justify-center rounded-full bg-red-100 dark:bg-red-500/15">
                             <FiTrash className="h-5 w-5 text-red-600 dark:text-red-400" />

@@ -28,17 +28,17 @@ export function CodeOutput({
     <div
       className={`${
         isFullscreen
-          ? "fixed inset-0 z-50 bg-slate-50 dark:bg-[#0d0d11] w-screen h-screen rounded-none border-none"
-          : "flex-1 flex flex-col rounded-xl bg-slate-50 dark:bg-[#0d0d11] border border-slate-200 dark:border-gray-800/80 shadow-2xl backdrop-blur-md"
+          ? "fixed inset-0 z-50 bg-slate-50 dark:bg-navy-950 w-screen h-screen rounded-none border-none"
+          : "flex-1 flex flex-col rounded-xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-gray-800/80 shadow-2xl backdrop-blur-md"
       } flex flex-col overflow-hidden relative`}
     >
-      <div className="bg-slate-100 dark:bg-[#18181c] px-4 py-3 flex items-center justify-between border-b border-slate-200 dark:border-gray-800/80 shrink-0">
+      <div className="bg-slate-100 dark:bg-navy-900 px-4 py-3 flex items-center justify-between border-b border-slate-200 dark:border-gray-800/80 shrink-0">
         <div className="flex gap-2">
           <button
             onClick={() => setViewMode("code")}
             className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
               viewMode === "code"
-                ? "bg-[#FB923C]/10 dark:bg-[#FB923C]/20 text-[#FB923C] dark:text-[#FB923C]"
+                ? "bg-brand-500/10 dark:bg-brand-500/20 text-brand-500 dark:text-brand-500"
                 : "text-slate-500 dark:text-gray-500 hover:text-slate-700 dark:hover:text-gray-300"
             }`}
           >

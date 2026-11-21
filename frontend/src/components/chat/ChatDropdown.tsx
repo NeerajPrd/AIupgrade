@@ -49,8 +49,8 @@ export default function ChatDropdown({
                     }
                 }}
                 className={`w-full px-3 py-[15px] rounded-3xl text-sm flex items-center justify-between transition-colors ${isActive
-                    ? "bg-[#2e2e2e] dark:bg-white text-white dark:text-black"
-                    : "hover:bg-gray-50 dark:hover:bg-[#2e2e2e]/50"
+                    ? "bg-primary text-primary-foreground"
+                    : "hover:bg-gray-50 dark:hover:bg-navy-800/50"
                 } ${!isSidebarOpen && "justify-center"}`}
             >
                 <div className="flex items-center gap-2.5">
@@ -90,7 +90,7 @@ export default function ChatDropdown({
                                     onClick={() => onSelect(item.conversation_id)}
                                     className={`flex-1 text-left text-xs truncate py-1.5 px-2 rounded-md transition-colors
                         ${activeId === item.conversation_id
-                                            ? "bg-white dark:bg-zinc-800 text-black dark:text-white font-semibold border border-gray-100 dark:border-zinc-700 shadow-sm"
+                                            ? "bg-accent text-accent-foreground font-semibold border border-primary/20 shadow-sm"
                                             : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800"
                                         }`}
                                 >

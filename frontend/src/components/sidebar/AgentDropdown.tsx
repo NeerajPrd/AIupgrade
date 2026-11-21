@@ -102,8 +102,8 @@ export default function AgentDropdown({
         className={`w-full text-left px-3 py-[15px] rounded-3xl text-sm flex items-center justify-between transition-colors
         ${!sidebarOpen && "justify-center"}
         ${isAgentsActive
-            ? "bg-[#2e2e2e] dark:bg-white text-white dark:text-black font-medium"
-            : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#2e2e2e]/50"
+            ? "bg-primary text-primary-foreground font-medium"
+            : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-navy-800/50"
           }`}
       >
         <div className="flex items-center gap-2.5">
@@ -128,7 +128,7 @@ export default function AgentDropdown({
                     onCloseMobileMenu();
                   }}
                   className={`text-left text-xs px-3 py-2 rounded-xl transition-colors truncate shrink-0 ${pathname === "/agents"
-                    ? "bg-white dark:bg-zinc-800 text-black dark:text-white font-semibold border border-gray-100 dark:border-zinc-700 shadow-sm"
+                    ? "bg-accent text-accent-foreground font-semibold border border-primary/20 shadow-sm"
                     : "text-gray-700 dark:text-gray-300 font-medium hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800/50"
                     }`}
                 >
@@ -158,7 +158,7 @@ export default function AgentDropdown({
                           onCloseMobileMenu();
                         }}
                         className={`flex items-center gap-2 text-left text-xs px-3 py-2 rounded-xl transition-colors truncate shrink-0 ${(!chatId && pathname === `/agents/${agentId}/chat`)
-                          ? "bg-white dark:bg-zinc-800 text-black dark:text-white font-semibold border border-gray-100 dark:border-zinc-700 shadow-sm"
+                          ? "bg-accent text-accent-foreground font-semibold border border-primary/20 shadow-sm"
                           : "text-gray-700 dark:text-gray-300 font-medium hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800/50"
                           }`}
                       >
@@ -183,7 +183,7 @@ export default function AgentDropdown({
                               onCloseMobileMenu();
                             }}
                             className={`text-left text-xs px-3 py-2 rounded-xl transition-colors truncate shrink-0 ${isActive
-                              ? "bg-white dark:bg-zinc-800 text-black dark:text-white font-semibold border border-gray-100 dark:border-zinc-700 shadow-sm"
+                              ? "bg-accent text-accent-foreground font-semibold border border-primary/20 shadow-sm"
                               : "text-gray-700 dark:text-gray-300 font-medium hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800/50"
                               }`}
                           >

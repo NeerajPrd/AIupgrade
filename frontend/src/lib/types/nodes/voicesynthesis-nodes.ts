@@ -133,9 +133,9 @@ export const VOICESYNTHESIS_NODE_DEFINITIONS: NodeDefinition[] = [
   },
   {
     id: 'fagoon-tts',
-    name: 'Fagoon-TTS',
+    name: 'Spirit Monkey TTS',
     category: 'voice-synthesis',
-    description: 'Fagoon\'s text-to-speech system',
+    description: 'Spirit Monkey text-to-speech',
     icon: 'volume',
     inputs: [
       {
@@ -188,7 +188,7 @@ export const VOICESYNTHESIS_NODE_DEFINITIONS: NodeDefinition[] = [
     ],
     tags: ['audio', 'voice', 'tts', 'speech', 'fagoon'],
     version: '1.0.0',
-    author: 'Fagoon'
+    author: 'Spirit Monkey'
   },
   {
     id: 'audio-to-text',

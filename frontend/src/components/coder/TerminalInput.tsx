@@ -41,18 +41,18 @@ export function TerminalInput({
 
   return (
     <div className={`flex-1 flex flex-col rounded-2xl bg-white/80 dark:bg-[#0f0f13]/90 border transition-all duration-500 shadow-2xl overflow-hidden relative backdrop-blur-xl
-      ${isFocused ? "border-[#FB923C]/50 ring-1 ring-[#FB923C]/20" : "border-slate-200 dark:border-gray-800/80"}
+      ${isFocused ? "border-brand-500/50 ring-1 ring-brand-500/20" : "border-slate-200 dark:border-gray-800/80"}
     `}>
       {/* Mac-style window controls */}
-      <div className="bg-slate-50/50 dark:bg-[#18181c]/50 px-5 py-4 flex items-center justify-between border-b border-slate-200 dark:border-gray-800/80 shrink-0">
+      <div className="bg-slate-50/50 dark:bg-navy-900/50 px-5 py-4 flex items-center justify-between border-b border-slate-200 dark:border-gray-800/80 shrink-0">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full bg-red-500/80 hover:bg-red-500 transition-colors cursor-pointer" />
           <div className="w-3 h-3 rounded-full bg-yellow-500/80 hover:bg-yellow-500 transition-colors cursor-pointer" />
           <div className="w-3 h-3 rounded-full bg-green-500/80 hover:bg-green-500 transition-colors cursor-pointer" />
-          <span className="ml-4 text-xs font-semibold text-slate-400 dark:text-gray-500 uppercase tracking-widest font-mono">Fagoon Terminal</span>
+          <span className="ml-4 text-xs font-semibold text-slate-400 dark:text-gray-500 uppercase tracking-widest font-mono">Spirit Monkey Terminal</span>
         </div>
         {isProcessing && (
-          <div className="flex items-center gap-2 text-[10px] text-[#FB923C] font-bold animate-pulse font-mono">
+          <div className="flex items-center gap-2 text-[10px] text-brand-500 font-bold animate-pulse font-mono">
             <Sparkles className="w-3 h-3" />
             COMPILING...
           </div>
@@ -68,7 +68,7 @@ export function TerminalInput({
               let bgClass = "";
               
               if (log.type === "command") {
-                colorClass = "text-[#FB923C] dark:text-[#FB923C] font-bold mt-6 mb-2";
+                colorClass = "text-brand-500 dark:text-brand-500 font-bold mt-6 mb-2";
                 bgClass = "bg-orange-50/50 dark:bg-orange-500/5 px-3 py-1 rounded-md w-fit";
               }
               if (log.type === "success") colorClass = "text-emerald-600 dark:text-emerald-400 font-medium";
@@ -94,10 +94,10 @@ export function TerminalInput({
         
         <div className={`flex items-center gap-4 px-4 py-1 rounded-2xl transition-all duration-300 border-2
           ${isFocused 
-            ? "bg-slate-50/50 dark:bg-slate-400/5 border-[#FB923C]/50 shadow-[0_0_15px_rgba(251,146,60,0.15)]" 
+            ? "bg-slate-50/50 dark:bg-slate-400/5 border-brand-500/50 shadow-[0_0_15px_rgba(251,146,60,0.15)]" 
             : "bg-white dark:bg-black/20 border-slate-200 dark:border-gray-800"}
         `}>
-          <div className={`p-2 rounded-xl transition-colors ${isFocused ? "text-[#FB923C]" : "text-slate-400"}`}>
+          <div className={`p-2 rounded-xl transition-colors ${isFocused ? "text-brand-500" : "text-slate-400"}`}>
             <Terminal className="w-5 h-5 shrink-0" />
           </div>
           
@@ -124,7 +124,7 @@ export function TerminalInput({
               {command.trim() && !isProcessing && (
                 <button
                   type="submit"
-                  className="p-2.5 rounded-xl bg-[#FB923C] hover:bg-[#FB923C]/90 text-white shadow-lg shadow-[#FB923C]/20 transition-all active:scale-95 animate-in fade-in zoom-in-75 duration-300"
+                  className="p-2.5 rounded-xl bg-brand-500 hover:bg-brand-500/90 text-white shadow-lg shadow-brand-500/20 transition-all active:scale-95 animate-in fade-in zoom-in-75 duration-300"
                 >
                   <SendHorizontal className="w-4 h-4" />
                 </button>
@@ -140,7 +140,7 @@ export function TerminalInput({
                     <img src={selectedModelObj.icon} alt={selectedModelObj.name} className="w-full h-full object-cover" />
                   </div>
                 ) : (
-                  <Cpu className={`w-5 h-5 transition-colors ${noModelSelected ? "text-[#FB923C] animate-pulse" : "text-slate-400 hover:text-[#FB923C]"}`} />
+                  <Cpu className={`w-5 h-5 transition-colors ${noModelSelected ? "text-brand-500 animate-pulse" : "text-slate-400 hover:text-brand-500"}`} />
                 );
 
                 return (

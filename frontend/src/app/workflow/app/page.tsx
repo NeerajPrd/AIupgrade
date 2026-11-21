@@ -395,12 +395,12 @@ export default function WorkflowPage() {
             <div className="flex-1 relative">
                 {/* Workflow controls */}
                 <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 w-full max-w-[95%] md:max-w-max px-2 max-md:left-auto max-md:right-4 max-md:translate-x-0 max-md:w-[calc(100%-80px)]">
-                    <div className="flex flex-col lg:flex-row items-center gap-2 bg-background/80 backdrop-blur-sm p-3 rounded-xl border border-[#FB923C] shadow-md w-full">
+                    <div className="flex flex-col lg:flex-row items-center gap-2 bg-background/80 backdrop-blur-sm p-3 rounded-xl border border-brand-500 shadow-md w-full">
                         <Input
                             placeholder="Enter workflow input..."
                             value={userInput}
                             onChange={(e) => setUserInput(e.target.value)}
-                            className="w-full focus-visible:ring-[#FB923C] shrink-0"
+                            className="w-full focus-visible:ring-brand-500 shrink-0"
                         />
                         <div className="flex flex-wrap items-center justify-center gap-2 w-full md:w-auto">
                             <LoadWorkflowDialog />
@@ -411,7 +411,7 @@ export default function WorkflowPage() {
                             <Button
                                 onClick={runWorkflow}
                                 disabled={isRunning}
-                                className="flex-1 md:flex-initial bg-[#FB923C] hover:bg-[#FB923C]/80 text-white shadow-sm h-9 px-3"
+                                className="flex-1 md:flex-initial bg-brand-500 hover:bg-brand-500/80 text-white shadow-sm h-9 px-3"
                             >
                                 <Play className="h-4 w-4 mr-2" />
                                 {isRunning ? "Running..." : <span>Run<span className="hidden md:inline"> Workflow</span></span>}
@@ -419,7 +419,7 @@ export default function WorkflowPage() {
                             <Button
                                 onClick={handlePublish}
                                 disabled={isPublishing}
-                                className="flex-1 md:flex-initial bg-[#FB923C] hover:bg-[#FB923C]/80 text-white shadow-sm h-9 px-3"
+                                className="flex-1 md:flex-initial bg-brand-500 hover:bg-brand-500/80 text-white shadow-sm h-9 px-3"
                             >
                                 <TbWorldShare className="h-4 w-4 mr-2" />
                                 {isPublishing ? "Publishing..." : <span>Publish<span className="hidden md:inline"> Workflow</span></span>}
@@ -431,7 +431,7 @@ export default function WorkflowPage() {
                 {/* Delete selected edge button */}
                 {selectedEdgeId && (
                     <div className="absolute top-20 right-4 z-10">
-                        <div className="bg-background/90 backdrop-blur-sm p-2 rounded-lg border border-[#FB923C] shadow-md">
+                        <div className="bg-background/90 backdrop-blur-sm p-2 rounded-lg border border-brand-500 shadow-md">
                             <Button
                                 variant="destructive"
                                 size="sm"
@@ -464,16 +464,16 @@ export default function WorkflowPage() {
                     proOptions={{ hideAttribution: true }}
                     className="touch-none"
                 >
-                    <Background color="#FB923C" gap={16} />
+                    <Background color="#3b82f6" gap={16} />
 
                     {/* Zoom controls */}
-                    <div className="absolute z-10 bottom-4 left-4 bg-background/90 backdrop-blur-sm p-2 rounded-lg border border-[#FB923C] shadow-md">
+                    <div className="absolute z-10 bottom-4 left-4 bg-background/90 backdrop-blur-sm p-2 rounded-lg border border-brand-500 shadow-md">
                         <div className="flex items-center gap-2">
                             <Button
                                 variant="ghost"
                                 size="icon"
                                 onClick={handleZoomIn}
-                                className="hover:bg-[#FB923C]/20"
+                                className="hover:bg-brand-500/20"
                                 title="Zoom In"
                             >
                                 <ZoomIn className="h-4 w-4" />
@@ -482,7 +482,7 @@ export default function WorkflowPage() {
                                 variant="ghost"
                                 size="icon"
                                 onClick={handleZoomOut}
-                                className="hover:bg-[#FB923C]/20"
+                                className="hover:bg-brand-500/20"
                                 title="Zoom Out"
                             >
                                 <ZoomOut className="h-4 w-4" />
@@ -491,7 +491,7 @@ export default function WorkflowPage() {
                                 variant="ghost"
                                 size="icon"
                                 onClick={handleFitView}
-                                className="hover:bg-[#FB923C]/20"
+                                className="hover:bg-brand-500/20"
                                 title="Fit View"
                             >
                                 <Maximize className="h-4 w-4" />
@@ -530,7 +530,7 @@ export default function WorkflowPage() {
                     }
                 }}
             >
-                <DialogContent className="border-[#FB923C]">
+                <DialogContent className="border-brand-500">
                     <DialogHeader>
                         <DialogTitle>Confirm Deletion</DialogTitle>
                         <DialogDescription>
@@ -541,7 +541,7 @@ export default function WorkflowPage() {
                         <Button
                             variant="outline"
                             onClick={() => setDeleteDialog({ isOpen: false, itemType: null, itemId: null })}
-                            className="border-[#FB923C] hover:bg-[#FB923C]/20"
+                            className="border-brand-500 hover:bg-brand-500/20"
                         >
                             Cancel
                         </Button>

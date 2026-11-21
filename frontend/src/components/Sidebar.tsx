@@ -151,7 +151,7 @@ const Sidebar = () => {
         onClick={() => setIsMobileMenuOpen((prev) => !prev)}
         className={`md:hidden fixed top-4 left-4 z-[60] p-2 rounded-lg ${isMobileMenuOpen
           ? "bg-transparent ring-0"
-          : "bg-white dark:bg-[#2e2e2e] shadow-lg ring-1 ring-black/5 dark:ring-white/5"
+          : "bg-white dark:bg-navy-800 shadow-lg ring-1 ring-black/5 dark:ring-white/5"
           }`}
         aria-label={isMobileMenuOpen ? "Close mobile menu" : "Open mobile menu"}
       >
@@ -162,7 +162,7 @@ const Sidebar = () => {
 
       {isMobileMenuOpen && (
         <div
-          className="md:hidden fixed inset-0 bg-[#2e2e2e]/40 backdrop-blur-sm z-50"
+          className="md:hidden fixed inset-0 bg-navy-800/40 backdrop-blur-sm z-50"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
@@ -174,23 +174,23 @@ const Sidebar = () => {
           ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}
           md:translate-x-0 md:relative
           ${sidebarOpen ? "w-64" : "w-16"}
-          bg-white dark:bg-[#2e2e2e] border-r border-gray-200 dark:border-gray-800
+          bg-white dark:bg-navy-800 border-r border-gray-200 dark:border-gray-800
         `}
         >
           <div className="flex flex-col h-full">
             <header className="flex-shrink-0 h-14 flex items-center justify-between px-4">
               <div className="flex items-center gap-2">
                 <Image
-                  src="/Icon.svg"
-                  alt="logo"
-                  width={24}
-                  height={24}
+                  src="/spirit-monkey-icon.png"
+                  alt="Spirit Monkey"
+                  width={28}
+                  height={28}
                   priority
                   className="flex-shrink-0"
                 />
                 {sidebarOpen && (
                   <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                    Upgrade
+                    Spirit Monkey
                   </span>
                 )}
               </div>
@@ -244,9 +244,9 @@ const Sidebar = () => {
                     }}
                     className={`w-full text-left px-3 py-[15px] rounded-3xl text-sm flex items-center justify-between transition-colors
                     ${!sidebarOpen && "justify-center"}
-                    ${activeRoute === item.route
-                        ? "bg-white dark:bg-zinc-800 text-black dark:text-white font-medium shadow-sm"
-                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#2e2e2e]/50"
+                    ${activeRoute === item.route || pathname.startsWith(item.route.replace(/\/$/, ""))
+                        ? "bg-primary text-primary-foreground font-medium shadow-sm"
+                        : "text-gray-700 dark:text-gray-300 hover:bg-accent hover:text-accent-foreground"
                       }`}
                   >
                     <div className="flex items-center gap-2.5">
@@ -294,7 +294,7 @@ const Sidebar = () => {
                 ) : (
                   <button
                     onClick={handleLogin}
-                    className={`w-full px-3 py-2 text-sm text-orange-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex items-center gap-2.5 font-medium ${!sidebarOpen && "flex items-center justify-center"
+                    className={`w-full px-3 py-2 text-sm text-primary hover:text-primary/80 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex items-center gap-2.5 font-medium ${!sidebarOpen && "flex items-center justify-center"
                       }`}
                   >
                     <IoMdLogOut className="text-lg flex-shrink-0" />

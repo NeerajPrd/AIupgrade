@@ -46,7 +46,7 @@ export function SettingsPanel() {
         setConnections([
           { id: 'conn-openai-1', name: 'My Personal OpenAI Key', type: 'openai' },
           { id: 'conn-gmail-1', name: 'Work Gmail Account (OAuth)', type: 'gmail' },
-          { id: 'conn-slack-1', name: 'Fagoon Workspace Slack Bot', type: 'slack' },
+          { id: 'conn-slack-1', name: 'Spirit Monkey Slack Bot', type: 'slack' },
           { id: 'conn-gcs-1', name: 'GCS Project Bucket Integration', type: 'gcs' }
         ]);
       }
@@ -182,7 +182,7 @@ export function SettingsPanel() {
           <select
             value={value !== undefined ? String(value) : ''}
             onChange={(e) => handleChange(e.target.value)}
-            className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-[#FB923C]"
+            className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-brand-500"
           >
             <option value="">-- Select Connection --</option>
             {filteredConnections.map((conn) => (
@@ -420,7 +420,7 @@ export function SettingsPanel() {
         <div className="p-4 border-t shrink-0 flex gap-2">
           <Button
             variant="outline"
-            className="flex-1 border-[#FB923C] hover:bg-[#FB923C]/10 dark:text-white"
+            className="flex-1 border-brand-500 hover:bg-brand-500/10 dark:text-white"
             onClick={() => setSelectedNode(null)}
           >
             Close
@@ -437,7 +437,7 @@ export function SettingsPanel() {
       </Card>
 
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="border-[#FB923C]">
+        <DialogContent className="border-brand-500">
           <DialogHeader>
             <DialogTitle>Confirm Deletion</DialogTitle>
             <DialogDescription>
@@ -448,7 +448,7 @@ export function SettingsPanel() {
             <Button
               variant="outline"
               onClick={() => setIsDeleteDialogOpen(false)}
-              className="border-[#FB923C] hover:bg-[#FB923C]/20"
+              className="border-brand-500 hover:bg-brand-500/20"
             >
               Cancel
             </Button>

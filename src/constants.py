@@ -19,6 +19,7 @@ ALLOWED_URL_PATH_WITHOUT_AUTHORIZATION = [
     "/docs",
     "/favicon.ico",
     "/api/v1/auth/login",
+    "/api/v1/auth/options",
     "/api/v1/workflow-api/",  # Public workflow API (uses X-API-Key auth)
     "/api/v1/auth/register",
     "/api/v1/auth/forgot-password",

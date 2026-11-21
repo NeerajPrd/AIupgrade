@@ -481,7 +481,7 @@ const AINewsExplorer: React.FC = () => {
 
   return (
     <NewsContext.Provider value={contextValue}>
-      <div className="min-h-screen bg-[#FAF9F5] dark:bg-[#1A202C]">
+      <div className="min-h-screen bg-brand-50 dark:bg-[#1A202C]">
         <div className="container mx-auto px-4 py-8 max-w-7xl ">
           
         <section className="text-center mb-20 relative">

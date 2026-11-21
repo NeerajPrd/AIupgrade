@@ -22,8 +22,8 @@ const quickSand = Quicksand({
 });
 
 export const metadata: Metadata = {
-  title: "Upgrade",
-  description: "Upgrade to next level",
+  title: "Spirit Monkey",
+  description: "Spirit Monkey dashboard: AI chatbots that answer customers and capture leads 24/7.",
 };
 
 export default function RootLayout({
@@ -47,7 +47,7 @@ export default function RootLayout({
           <TokenProvider>
             <SelectedModelProvider>
               <TooltipProvider>
-                <div className="flex min-h-screen bg-gradient-to-r from-[#efefef] via-[#f7ece5]  to-[#fcefe7] dark:bg-gradient-to-t dark:from-[#191919] dark:to-[#191919]">
+                <div className="flex min-h-screen bg-brand-50/60 dark:bg-background">
                     <Suspense fallback={null}>
                       <Sidebar />
                     </Suspense>
@@ -55,12 +55,12 @@ export default function RootLayout({
                     <div className="flex-1  slim-scrollbar">
                       <ThemeProvider
                         attribute="class"
-                        defaultTheme="dark"
+                        defaultTheme="light"
                         enableSystem
                       >
                         <ThemeToggle />
                         {children}
-                        <PoweredBy className="fixed bottom-4 right-4 z-20 bg-[#0b0b0d]/50 backdrop-blur-sm px-3 py-1 rounded-full border border-zinc-800/40" />
+                        <PoweredBy className="fixed bottom-4 right-4 z-20 bg-background/80 backdrop-blur-sm px-3 py-1 rounded-full border border-border shadow-sm" />
                         {/* <div className="fixed bottom-10 right-10">
                           <NovaMiniChat />
                         </div> */}

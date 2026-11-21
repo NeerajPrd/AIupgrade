@@ -63,13 +63,13 @@ export default function ForgotPage() {
       <div className="flex flex-col bg-white dark:bg-gray-800 p-6 lg:p-12 rounded-[20px] gap-6 shadow-lg w-full max-w-md mx-auto">
         <div className="flex w-full items-center justify-center gap-3 text-2xl font-semibold">
           <Image
-            src="/Icon.svg"
+            src="/spirit-monkey-icon.png"
             alt="logo"
             height={32}
             width={32}
             className="animate-pulse"
           />
-          <span className="text-purple-600 dark:text-white">Upgrade</span>
+          <span className="text-brand-600 dark:text-white">Spirit Monkey</span>
         </div>
 
         <div className="text-center">

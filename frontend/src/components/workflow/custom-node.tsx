@@ -123,7 +123,7 @@ export const CustomNode = ({ id, data, selected }: CustomNodeProps) => {
           title="Run this node in isolation"
           className="p-1 hover:bg-orange-100 dark:hover:bg-orange-950/30 rounded-full transition-colors flex items-center justify-center cursor-pointer shrink-0 select-none border-0 bg-transparent"
         >
-          <Play className="h-4 w-4 text-[#FB923C] hover:scale-110 transition-transform" />
+          <Play className="h-4 w-4 text-brand-500 hover:scale-110 transition-transform" />
         </button>
       </div>
       <div className="p-3 space-y-3 bg-white/80 dark:bg-black/45 rounded-lg">

@@ -41,8 +41,8 @@ const ChatInput = ({ history_id, handleSubmitInput }: { history_id: string, hand
         deepseek: '/icons/deepseek.png',
         groq: '/icons/llama3.webp',
         hugging_face: '/icons/llama3.webp',
-        localhost: '/Icon.svg',
-        perplexity: '/Icon.svg'
+        localhost: '/spirit-monkey-icon.png',
+        perplexity: '/spirit-monkey-icon.png'
     };
 
     const fetchedModelsList = React.useMemo(() => {
@@ -50,7 +50,7 @@ const ChatInput = ({ history_id, handleSubmitInput }: { history_id: string, hand
         return Array.isArray(rawList) ? rawList.map((model: any) => ({
             id: model.model_id || model.id,
             name: model.name,
-            icon: PROVIDER_ICONS[model.provider] || '/Icon.svg'
+            icon: PROVIDER_ICONS[model.provider] || '/spirit-monkey-icon.png'
         })) : [];
     }, [allModels]);
 
@@ -126,7 +126,7 @@ const ChatInput = ({ history_id, handleSubmitInput }: { history_id: string, hand
     return (
         <div className="w-full max-w-4xl mx-auto px-4 pb-6 pt-2 flex flex-col">
             <div className="flex items-center w-full">
-                <div className="flex flex-col bg-white dark:bg-[#2E2E2E]/90 rounded-3xl flex-1">
+                <div className="flex flex-col bg-white dark:bg-navy-800/90 rounded-3xl flex-1">
                     <div className="flex flex-row">
                         <div className={`relative flex flex-1 items-center`}>
 

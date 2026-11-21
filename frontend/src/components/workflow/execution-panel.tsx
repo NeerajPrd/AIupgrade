@@ -94,13 +94,13 @@ export function ExecutionPanel() {
 
   return (
     <Card
-      className={`fixed bottom-4 right-4 z-40 shadow-2xl border border-[#FB923C] transition-all duration-300 bg-[#121214] text-zinc-100 rounded-xl overflow-hidden max-md:bottom-2 max-md:right-2 max-md:m-0 max-md:w-[calc(100%-16px)] ${maximized ? 'w-full md:w-3/4 lg:w-2/3 h-3/4' : expanded ? 'w-full sm:w-[450px] h-[400px] max-md:h-[280px]' : 'w-full sm:w-[450px] h-auto'
+      className={`fixed bottom-4 right-4 z-40 shadow-2xl border border-brand-500 transition-all duration-300 bg-navy-950 text-zinc-100 rounded-xl overflow-hidden max-md:bottom-2 max-md:right-2 max-md:m-0 max-md:w-[calc(100%-16px)] ${maximized ? 'w-full md:w-3/4 lg:w-2/3 h-3/4' : expanded ? 'w-full sm:w-[450px] h-[400px] max-md:h-[280px]' : 'w-full sm:w-[450px] h-auto'
         }`}
     >
-      <div className="p-3 border-b flex items-center justify-between bg-[#1a1a1e] border-[#FB923C]/30 select-none">
+      <div className="p-3 border-b flex items-center justify-between bg-[#1a1a1e] border-brand-500/30 select-none">
         <div className="flex items-center gap-2">
           <div className={`w-2.5 h-3 rounded-full ${statusColors[currentExecution.status]}`} />
-          <h3 className="font-semibold text-xs tracking-wider uppercase text-[#FB923C]/95">Terminal Logs</h3>
+          <h3 className="font-semibold text-xs tracking-wider uppercase text-brand-500/95">Terminal Logs</h3>
           <span className="text-[10px] font-mono text-zinc-500 ml-2">
             {new Date(currentExecution.startTime).toLocaleTimeString()}
           </span>
@@ -136,10 +136,10 @@ export function ExecutionPanel() {
       {expanded && (
         <ScrollArea className={`${maximized ? 'h-[calc(100%-3rem)]' : 'h-[330px] max-md:h-[210px]'} p-3 font-mono`}>
           {Object.values(currentExecution.nodes).map((node) => (
-            <div key={node.id} className="mb-4 last:mb-2 bg-[#18181c] border border-zinc-900 rounded-lg p-3">
+            <div key={node.id} className="mb-4 last:mb-2 bg-navy-900 border border-zinc-900 rounded-lg p-3">
               <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-zinc-900">
                 <div className={`w-2 h-2 rounded-full ${statusColors[node.status]}`} />
-                <span className="font-bold text-xs text-[#FB923C] font-mono">{node.id}</span>
+                <span className="font-bold text-xs text-brand-500 font-mono">{node.id}</span>
                 <span className="text-[10px] ml-auto text-zinc-500 font-mono">
                   {new Date(currentExecution.startTime).toLocaleTimeString()}
                 </span>
@@ -147,7 +147,7 @@ export function ExecutionPanel() {
               {node.output &&
                 getContentType(node.output) == 'text' &&
                 (
-                  <div className="bg-[#121214] p-2 rounded-md border border-zinc-950">
+                  <div className="bg-navy-950 p-2 rounded-md border border-zinc-950">
                     <ScrollArea className="max-h-[220px] overflow-y-auto">
                       <pre className="text-[11px] whitespace-pre-wrap break-words leading-relaxed text-zinc-300 font-mono">
                         {JSON.stringify(node.output, null, 2)}
@@ -160,7 +160,7 @@ export function ExecutionPanel() {
                 getContentType(node.output) == 'image' &&
                 (
                   <div>
-                    <div className="bg-[#121214] p-2 rounded-md border border-zinc-950">
+                    <div className="bg-navy-950 p-2 rounded-md border border-zinc-950">
                       <ScrollArea className="max-h-[220px] overflow-y-auto">
                         <img
                           src={fileUrls[node.output]}
@@ -178,7 +178,7 @@ export function ExecutionPanel() {
                 getContentType(node.output) == 'audio' &&
                 (
                   <div>
-                    <div className="bg-[#121214] p-2 rounded-md border border-zinc-950">
+                    <div className="bg-navy-950 p-2 rounded-md border border-zinc-950">
                       <ScrollArea className="max-h-[220px] overflow-y-auto">
                         <audio controls key={node.output} className="h-8 max-w-full">
                           <source src={fileUrls[node.output]} type="audio/mpeg" />
@@ -193,7 +193,7 @@ export function ExecutionPanel() {
                 getContentType(node.output) == 'video' &&
                 (
                   <div>
-                    <div className="bg-[#121214] p-2 rounded-md border border-zinc-950">
+                    <div className="bg-navy-950 p-2 rounded-md border border-zinc-950">
                       <ScrollArea className="max-h-[220px] overflow-y-auto">
                         <video width="640" height="360" controls className="max-w-full rounded-md">
                           <source src={fileUrls[node.output]} type="video/mp4" />

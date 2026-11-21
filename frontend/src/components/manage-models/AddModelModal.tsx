@@ -192,7 +192,7 @@ export function AddModelModal({ isOpen, onClose, editingModelId }: AddModelModal
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent
-        className="max-w-2xl bg-white dark:bg-[#2e2e2e] border border-slate-200 dark:border-gray-800 text-slate-800 dark:text-gray-200 max-h-[90vh] overflow-y-auto"
+        className="max-w-2xl bg-white dark:bg-navy-800 border border-slate-200 dark:border-gray-800 text-slate-800 dark:text-gray-200 max-h-[90vh] overflow-y-auto"
         // Only the X button should discard a typed API key / provider config.
         onInteractOutside={(e) => e.preventDefault()}
       >
@@ -222,17 +222,17 @@ export function AddModelModal({ isOpen, onClose, editingModelId }: AddModelModal
                   placeholder="e.g. GPT-4o Standard, Gemini Pro Production"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="bg-slate-50 dark:bg-[#1e1e1e] border-slate-200 dark:border-gray-700 text-slate-850 dark:text-gray-200 focus-visible:ring-slate-300 dark:focus-visible:ring-gray-600"
+                  className="bg-slate-50 dark:bg-navy-900 border-slate-200 dark:border-gray-700 text-slate-850 dark:text-gray-200 focus-visible:ring-slate-300 dark:focus-visible:ring-gray-600"
                 />
               </div>
 
               <div className="space-y-2 pt-2">
                 <label className="text-sm font-medium text-slate-700 dark:text-gray-300">Select Provider</label>
                 <Select value={provider} onValueChange={setProvider}>
-                  <SelectTrigger className="w-full bg-slate-50 dark:bg-[#1e1e1e] border border-slate-200 dark:border-gray-700 text-slate-850 dark:text-gray-200">
+                  <SelectTrigger className="w-full bg-slate-50 dark:bg-navy-900 border border-slate-200 dark:border-gray-700 text-slate-850 dark:text-gray-200">
                     <SelectValue placeholder="Choose a provider..." />
                   </SelectTrigger>
-                  <SelectContent className="bg-white dark:bg-[#2e2e2e] border border-slate-200 dark:border-gray-700 text-slate-800 dark:text-gray-200">
+                  <SelectContent className="bg-white dark:bg-navy-800 border border-slate-200 dark:border-gray-700 text-slate-800 dark:text-gray-200">
                     {PROVIDERS.map((p) => (
                       <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                     ))}
@@ -246,7 +246,7 @@ export function AddModelModal({ isOpen, onClose, editingModelId }: AddModelModal
                   placeholder="e.g. gpt-4o, gemini-1.5-pro, deepseek-coder"
                   value={modelId}
                   onChange={(e) => setModelId(e.target.value)}
-                  className="bg-slate-50 dark:bg-[#1e1e1e] border-slate-200 dark:border-gray-700 text-slate-850 dark:text-gray-200 focus-visible:ring-slate-300 dark:focus-visible:ring-gray-600"
+                  className="bg-slate-50 dark:bg-navy-900 border-slate-200 dark:border-gray-700 text-slate-850 dark:text-gray-200 focus-visible:ring-slate-300 dark:focus-visible:ring-gray-600"
                 />
               </div>
 
@@ -257,7 +257,7 @@ export function AddModelModal({ isOpen, onClose, editingModelId }: AddModelModal
                     placeholder="https://api.your-custom-provider.com/v1"
                     value={baseUrl}
                     onChange={(e) => setBaseUrl(e.target.value)}
-                    className="bg-slate-50 dark:bg-[#1e1e1e] border-slate-200 dark:border-gray-700 text-slate-850 dark:text-gray-200 focus-visible:ring-slate-300 dark:focus-visible:ring-gray-600"
+                    className="bg-slate-50 dark:bg-navy-900 border-slate-200 dark:border-gray-700 text-slate-850 dark:text-gray-200 focus-visible:ring-slate-300 dark:focus-visible:ring-gray-600"
                   />
                 </div>
               )}
@@ -272,7 +272,7 @@ export function AddModelModal({ isOpen, onClose, editingModelId }: AddModelModal
                   placeholder={editingModelId ? "••••••••••••" : "Enter your API key"}
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
-                  className="bg-slate-50 dark:bg-[#1e1e1e] border-slate-200 dark:border-gray-700 text-slate-850 dark:text-gray-200 focus-visible:ring-slate-300 dark:focus-visible:ring-gray-600"
+                  className="bg-slate-50 dark:bg-navy-900 border-slate-200 dark:border-gray-700 text-slate-850 dark:text-gray-200 focus-visible:ring-slate-300 dark:focus-visible:ring-gray-600"
                 />
               </div>
             </div>
@@ -281,7 +281,7 @@ export function AddModelModal({ isOpen, onClose, editingModelId }: AddModelModal
               <h2 className="text-lg font-semibold border-b border-slate-100 dark:border-gray-800 pb-2">2. Feature Allocation</h2>
               <p className="text-sm text-slate-500 dark:text-gray-400">Select where you want to use this provider's default model.</p>
 
-              <div className="flex items-center space-x-3 bg-slate-50 dark:bg-[#1e1e1e] p-3 rounded-md border border-slate-200 dark:border-gray-800">
+              <div className="flex items-center space-x-3 bg-slate-50 dark:bg-navy-900 p-3 rounded-md border border-slate-200 dark:border-gray-800">
                 <input
                   type="checkbox"
                   id="use-chat"
@@ -294,7 +294,7 @@ export function AddModelModal({ isOpen, onClose, editingModelId }: AddModelModal
                 </label>
               </div>
 
-              <div className="flex items-center space-x-3 bg-slate-50 dark:bg-[#1e1e1e] p-3 rounded-md border border-slate-200 dark:border-gray-800">
+              <div className="flex items-center space-x-3 bg-slate-50 dark:bg-navy-900 p-3 rounded-md border border-slate-200 dark:border-gray-800">
                 <input
                   type="checkbox"
                   id="use-vibe-coder"
@@ -307,7 +307,7 @@ export function AddModelModal({ isOpen, onClose, editingModelId }: AddModelModal
                 </label>
               </div>
 
-              <div className="space-y-3 bg-slate-50 dark:bg-[#1e1e1e] p-4 rounded-md border border-slate-200 dark:border-gray-800">
+              <div className="space-y-3 bg-slate-50 dark:bg-navy-900 p-4 rounded-md border border-slate-200 dark:border-gray-800">
                 <div className="flex items-center space-x-3 border-b border-slate-200 dark:border-gray-800 pb-3">
                   <input
                     type="checkbox"
@@ -353,7 +353,7 @@ export function AddModelModal({ isOpen, onClose, editingModelId }: AddModelModal
                 </div>
               </div>
 
-              <div className="space-y-3 bg-slate-50 dark:bg-[#1e1e1e] p-4 rounded-md border border-slate-200 dark:border-gray-800">
+              <div className="space-y-3 bg-slate-50 dark:bg-navy-900 p-4 rounded-md border border-slate-200 dark:border-gray-800">
                 <div className="flex items-center space-x-3 border-b border-slate-200 dark:border-gray-800 pb-3">
                   <input
                     type="checkbox"

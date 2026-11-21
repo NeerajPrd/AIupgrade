@@ -52,7 +52,7 @@ export function ModelList({ models, onAddNewModel, onEditModel }: ModelListProps
     <>
       <div className="space-y-4">
         {models.length === 0 ? (
-          <div className="bg-slate-50 dark:bg-[#2e2e2e]/50 border border-slate-200 dark:border-gray-800 rounded-lg p-10 flex flex-col items-center justify-center text-center">
+          <div className="bg-slate-50 dark:bg-navy-800/50 border border-slate-200 dark:border-gray-800 rounded-lg p-10 flex flex-col items-center justify-center text-center">
             <Key className="w-12 h-12 text-slate-400 dark:text-gray-500 mb-4" />
             <h3 className="text-lg font-medium text-slate-800 dark:text-gray-300">No Custom Models Added</h3>
             <p className="text-sm text-slate-500 dark:text-gray-500 mt-2 max-w-md">
@@ -60,7 +60,7 @@ export function ModelList({ models, onAddNewModel, onEditModel }: ModelListProps
             </p>
             <Button
               onClick={onAddNewModel}
-              className="mt-6 bg-transparent border border-slate-300 dark:border-gray-600 hover:bg-slate-100 dark:hover:bg-[#2e2e2e] text-slate-800 dark:text-white"
+              className="mt-6 bg-transparent border border-slate-300 dark:border-gray-600 hover:bg-slate-100 dark:hover:bg-navy-800 text-slate-800 dark:text-white"
             >
               Add Your First Model
             </Button>
@@ -69,7 +69,7 @@ export function ModelList({ models, onAddNewModel, onEditModel }: ModelListProps
           models?.map((model) => (
             <div
               key={model.id}
-              className="bg-white dark:bg-[#2e2e2e] p-5 rounded-lg border border-slate-200 dark:border-gray-800 flex items-center justify-between shadow-sm"
+              className="bg-white dark:bg-navy-800 p-5 rounded-lg border border-slate-200 dark:border-gray-800 flex items-center justify-between shadow-sm"
             >
               <div>
                 <h3 className="font-semibold text-slate-800 dark:text-gray-200">{model.name}</h3>
@@ -104,7 +104,7 @@ export function ModelList({ models, onAddNewModel, onEditModel }: ModelListProps
 
       {/* Delete Confirmation Alert Dialog */}
       <AlertDialog open={!!modelToDelete} onOpenChange={(open) => !open && setModelToDelete(null)}>
-        <AlertDialogContent className="bg-white dark:bg-[#2e2e2e] border border-slate-200 dark:border-gray-800 text-slate-850 dark:text-gray-200">
+        <AlertDialogContent className="bg-white dark:bg-navy-800 border border-slate-200 dark:border-gray-800 text-slate-850 dark:text-gray-200">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-slate-900 dark:text-gray-100">Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription className="text-slate-500 dark:text-gray-400">

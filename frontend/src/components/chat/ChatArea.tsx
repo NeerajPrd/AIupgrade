@@ -71,7 +71,7 @@ export const ChatArea = forwardRef<
         };
 
         return (
-            <div className="rounded-3xl bg-white dark:bg-[#2E2E2E]/90 flex flex-col flex-1">
+            <div className="rounded-3xl bg-white dark:bg-navy-800/90 flex flex-col flex-1">
                 {selectedFile && (
                     <div className="px-4 pt-4">
                         <FilePreview file={selectedFile} onRemove={onRemoveFile} />

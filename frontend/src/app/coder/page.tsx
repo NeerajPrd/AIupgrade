@@ -16,18 +16,18 @@ const PROVIDER_ICONS: Record<string, string> = {
   anthropic: "/thirdparty/logos/anthropic.svg",
   deepseek: "/icons/deepseek.png",
   llama: "/icons/llama3.webp",
-  localhost: "/Icon.svg",
-  perplexity: "/Icon.svg",
+  localhost: "/spirit-monkey-icon.png",
+  perplexity: "/spirit-monkey-icon.png",
 };
 
 export default function Home() {
   const [command, setCommand] = useState("");
   const [activeCode, setActiveCode] = useState(
-    "// Welcome to Fagoon Code.\n// Ask me to build something, and the code will appear here."
+    "// Welcome to Spirit Monkey Code.\n// Ask me to build something, and the code will appear here."
   );
   const [viewMode, setViewMode] = useState<"code" | "preview">("code");
   const [logs, setLogs] = useState([
-    { type: "info", text: "[⚡ Fagoon Code Initialized] System online." },
+    { type: "info", text: "[⚡ Spirit Monkey Code Initialized] System online." },
     { type: "success", text: "[✓ System] Ready for commands." },
   ]);
   const logEndRef = useRef<HTMLDivElement>(null);
@@ -49,7 +49,7 @@ export default function Home() {
           id: model.id,
           name: model.name,
           provider: model.provider,
-          icon: PROVIDER_ICONS[model.provider] || "/Icon.svg",
+          icon: PROVIDER_ICONS[model.provider] || "/spirit-monkey-icon.png",
         }))
       : [];
   }, [allModels]);
@@ -72,7 +72,7 @@ export default function Home() {
   const simulateWork = async (cmd: string) => {
     setActiveCode("");
     setIsProcessing(true);
-    setLogs((prev) => [...prev, { text: `[⚡ Fagoon Code Intercept]: Routing natural language prompt to AI Backend...`, type: "warning" }]);
+    setLogs((prev) => [...prev, { text: `[⚡ Spirit Monkey Code Intercept]: Routing natural language prompt to AI Backend...`, type: "warning" }]);
 
     try {
       const currentModel = fetchedModelsList.find(m => m.id === selectedModel);
@@ -97,7 +97,7 @@ export default function Home() {
       let accumulatedCode = "";
       let finished = false;
 
-      setLogs((prev) => [...prev, { text: `[⚡ Fagoon Code Intercept]: Connection established. Streaming code chunks...`, type: "info" }]);
+      setLogs((prev) => [...prev, { text: `[⚡ Spirit Monkey Code Intercept]: Connection established. Streaming code chunks...`, type: "info" }]);
 
       let cleanCodeResult = "";
 
@@ -187,7 +187,7 @@ export default function Home() {
       {/* Header */}
       <div className="flex justify-between items-center mb-8 shrink-0">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Fagoon Code</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Spirit Monkey Code</h1>
           <p className="text-muted-foreground mt-1 font-sans text-sm">Enterprise AI Developer</p>
         </div>
         <div className="flex items-center gap-4 text-sm shrink-0">

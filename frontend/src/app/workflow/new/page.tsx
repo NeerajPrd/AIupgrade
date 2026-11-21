@@ -237,7 +237,7 @@ const FagoonAgentsPage: NextPage = () => {
 
   return (
     <div className="container mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">Fagoon Agents Workflow</h1>
+      <h1 className="text-3xl font-bold mb-6">Spirit Monkey Agents Workflow</h1>
       
       {/* User Type Selection */}
       <div className="mb-6">

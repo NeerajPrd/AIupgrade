@@ -86,6 +86,12 @@ async def verify_email(
     return await create_and_send_token(user_in_db, response, request)
 
 
+@router.get("/options")
+async def auth_options() -> Dict[str, bool]:
+    """Public: what the login page may offer. Only says whether public signup is open."""
+    return {"public_signup": policy.public_signup_allowed()}
+
+
 @router.post("/login", response_model=Union[LoginSuccessResponse, LoginFailureResponse])
 async def login(
     request_data: UserLogin,

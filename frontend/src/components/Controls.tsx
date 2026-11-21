@@ -39,7 +39,7 @@ export default function Controls() {
             }
           >
 
-            <div className={"relative flex items-center flex-col gap-[20px] shrink rounded-full bg-gradient-to-r from-[#F9ECE8] via-[#EFE7FD] to-[#F0E4F9] h-[300px] w-[300px] grow-0 p-[10px]"}>
+            <div className={"relative flex items-center flex-col gap-[20px] shrink rounded-full bg-gradient-to-r from-brand-50 via-brand-100 to-brand-50 h-[300px] w-[300px] grow-0 p-[10px]"}>
               <div className="text-2xl">
                 Hi Human
               </div>

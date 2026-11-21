@@ -85,7 +85,7 @@ export function LoadWorkflowDialog() {
       <DialogTrigger asChild>
         <Button variant="outline">Load Workflow</Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md bg-white dark:bg-[#2e2e2e] border border-slate-200 dark:border-gray-800 text-slate-800 dark:text-gray-200">
+      <DialogContent className="max-w-md bg-white dark:bg-navy-800 border border-slate-200 dark:border-gray-800 text-slate-800 dark:text-gray-200">
         <DialogHeader>
           <DialogTitle>Load Workflow</DialogTitle>
         </DialogHeader>
