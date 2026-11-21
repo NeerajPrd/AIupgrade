@@ -1,6 +1,9 @@
 // Spirit Monkey Privacy Policy and Terms of Service.
 // Generated word for word from "Spirit Monkey Privacy Policy and Terms of Service (Draft).docx".
-// To change the wording, edit the Word document and regenerate this file rather than editing by hand.
+// Changes made after that document (approved 21 November 2026):
+//   - Privacy section 5: AI providers may train on chat data during the free trial.
+//   - Both Contact sections: company name now "Spirit Monkey Information Technology Pvt. Ltd.".
+// Keep the Word document in step with this file when the wording changes.
 
 export type LegalBlock = { type: "paragraph"; text: string } | { type: "list"; items: string[] };
 export type LegalSection = { heading: string; blocks: LegalBlock[] };
@@ -79,7 +82,7 @@ export const PRIVACY_POLICY: LegalDocument = {
       "blocks": [
         {
           "type": "paragraph",
-          "text": "Our chatbots use leading third-party AI models to understand questions and write answers. Your messages, and relevant parts of the business's documents, are sent to the AI provider to generate each reply. We use AI providers under terms that do not allow them to use this data to train their models. Chatbot answers are generated automatically and may occasionally be inaccurate. Please confirm important details directly with the business."
+          "text": "Our chatbots use leading third-party AI models to understand questions and write answers. Your messages, and relevant parts of the business's documents, are sent to the AI provider to generate each reply. We use AI providers under terms that do not allow them to use this data to train their models, unless the chatbot is on our free trial: during a trial, the AI provider's terms may allow it to use messages and replies to improve its models. Chatbot answers are generated automatically and may occasionally be inaccurate. Please confirm important details directly with the business."
         }
       ]
     },
@@ -169,7 +172,7 @@ export const PRIVACY_POLICY: LegalDocument = {
       "blocks": [
         {
           "type": "paragraph",
-          "text": "Spirit Monkey Information Technology, Sanepa, Kathmandu, Nepal. Email: spirit.monkeytech@gmail.com. Phone, WhatsApp and Viber: +977 9841135432 (6 AM to 10 PM Nepal time)."
+          "text": "Spirit Monkey Information Technology Pvt. Ltd., Sanepa, Kathmandu, Nepal. Email: spirit.monkeytech@gmail.com. Phone, WhatsApp and Viber: +977 9841135432 (6 AM to 10 PM Nepal time)."
         }
       ]
     }
@@ -318,7 +321,7 @@ export const TERMS_OF_SERVICE: LegalDocument = {
       "blocks": [
         {
           "type": "paragraph",
-          "text": "Spirit Monkey Information Technology, Sanepa, Kathmandu, Nepal. Email: spirit.monkeytech@gmail.com. Phone, WhatsApp and Viber: +977 9841135432."
+          "text": "Spirit Monkey Information Technology Pvt. Ltd., Sanepa, Kathmandu, Nepal. Email: spirit.monkeytech@gmail.com. Phone, WhatsApp and Viber: +977 9841135432."
         }
       ]
     }
