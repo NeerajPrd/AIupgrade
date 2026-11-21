@@ -11,6 +11,7 @@ import {
 } from "react-icons/ri";
 import { HiOutlineMail } from "react-icons/hi";
 import { cn } from "@/lib/utils";
+import { PRIVACY_POLICY_URL, TERMS_URL } from "@/lib/public-paths";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, LoginFormData } from "@/lib/schemas/auth";
@@ -112,10 +113,10 @@ const LoginPage = () => {
           <p className="mt-3 text-lg font-medium text-white/90">24/7 AI Sales &amp; Support Agents</p>
         </div>
         <div className="absolute bottom-8 left-0 right-0 z-10 flex justify-center gap-8 text-sm">
-          <a href="/privacy-policy" className="text-white underline-offset-4 hover:underline">
+          <a href={PRIVACY_POLICY_URL} className="text-white underline-offset-4 hover:underline">
             Privacy Policy
           </a>
-          <a href="/terms-and-conditions" className="text-white underline-offset-4 hover:underline">
+          <a href={TERMS_URL} className="text-white underline-offset-4 hover:underline">
             Terms of Service
           </a>
         </div>
@@ -205,10 +206,10 @@ const LoginPage = () => {
 
           {/* Policy links for phones and tablets (the brand panel is hidden there) */}
           <div className="lg:hidden flex justify-center gap-6 text-sm">
-            <a href="/privacy-policy" className="text-foreground/80 underline underline-offset-4 hover:text-primary">
+            <a href={PRIVACY_POLICY_URL} className="text-foreground/80 underline underline-offset-4 hover:text-primary">
               Privacy Policy
             </a>
-            <a href="/terms-and-conditions" className="text-foreground/80 underline underline-offset-4 hover:text-primary">
+            <a href={TERMS_URL} className="text-foreground/80 underline underline-offset-4 hover:text-primary">
               Terms of Service
             </a>
           </div>

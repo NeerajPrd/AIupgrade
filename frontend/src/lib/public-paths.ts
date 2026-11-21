@@ -3,6 +3,13 @@
 // other page still sends logged-out visitors to /login.
 //
 // Plain TypeScript with no imports, so tests/public-paths.test.mjs can run it with `node --test`.
+//
+// The legal text itself lives on the static marketing site; next.config.mjs redirects these two
+// dashboard paths there (permanently). They stay listed here so no login check can ever get in
+// the way of that redirect.
+
+export const PRIVACY_POLICY_URL = "https://spirit-monkey.com/privacy-policy/";
+export const TERMS_URL = "https://spirit-monkey.com/terms/";
 
 export const PUBLIC_PAGE_PATHS: readonly string[] = ["/privacy-policy", "/terms-and-conditions"];
 

@@ -27,3 +27,20 @@ test("every other page still requires login", () => {
     assert.equal(shouldRedirectToLogin(path), true, path);
   }
 });
+
+// ---- the legal text lives only on the static marketing site
+
+import { PRIVACY_POLICY_URL, TERMS_URL } from "../src/lib/public-paths.ts";
+import { LEGAL_REDIRECTS } from "../next.config.mjs";
+
+test("dashboard legal paths redirect permanently to the static marketing pages", () => {
+  assert.deepEqual(
+    LEGAL_REDIRECTS.map(({ source, destination, permanent }) => [source, destination, permanent]),
+    [
+      ["/privacy-policy", PRIVACY_POLICY_URL, true],
+      ["/terms-and-conditions", TERMS_URL, true],
+    ]
+  );
+  assert.equal(PRIVACY_POLICY_URL, "https://spirit-monkey.com/privacy-policy/");
+  assert.equal(TERMS_URL, "https://spirit-monkey.com/terms/");
+});

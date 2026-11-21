@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Privacy Policy — Spirit Monkey</title>
+<meta name="description" content="How Spirit Monkey collects, uses and protects personal information." />
+<link rel="canonical" href="https://spirit-monkey.com/privacy-policy/" />
+<link rel="icon" type="image/png" href="/assets/spirit-monkey-favicon.png" />
+<!-- Generated from the Spirit Monkey legal text. This is the only copy: the dashboard redirects here. -->
+<style>
+  :root{
+    --bg:#ffffff;
+    --bg-alt:#fbfbfd;
+    --card:#ffffff;
+    --border:#e8e8ed;
+    --border-strong:#d2d2d7;
+    --text:#1d1d1f;
+    --text-dim:#6e6e73;
+    --text-soft:#424245;
+    --blue:#3b82f6;
+    --violet:#a855f7;
+    --accent-text:#7c5cff;
+    --gradient:linear-gradient(135deg,var(--blue),var(--violet));
+    --radius:18px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',Helvetica,Arial,sans-serif;
+    line-height:1.6;
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;text-decoration:none;}
+  img{max-width:100%;display:block;}
+  .wrap{max-width:1160px;margin:0 auto;padding:0 24px;}
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    padding:13px 28px;border-radius:980px;font-weight:600;font-size:15px;
+    cursor:pointer;border:1px solid transparent;transition:transform .15s ease,box-shadow .15s ease,opacity .15s ease,background .15s ease;
+    white-space:nowrap;
+  }
+  .btn:hover{transform:translateY(-1px);}
+  .btn-primary{background:var(--gradient);color:#fff;box-shadow:0 10px 24px -8px rgba(139,92,246,.45);}
+  .btn-primary:hover{opacity:.94;box-shadow:0 12px 28px -6px rgba(139,92,246,.55);}
+  .btn-ghost{background:#fff;color:var(--text);border-color:var(--border-strong);}
+  .btn-ghost:hover{background:#f5f5f7;}
+  .btn .wa-icon{width:18px;height:18px;flex:0 0 auto;color:#25d366;}
+
+  /* Header */
+  header{
+    position:sticky;top:0;z-index:50;
+    backdrop-filter:blur(12px);
+    background:rgba(255,255,255,.82);
+    border-bottom:1px solid var(--border);
+  }
+  .nav{display:flex;align-items:center;justify-content:space-between;padding:6px 24px;}
+  .brand{display:flex;align-items:center;}
+  .brand img{height:80px;width:auto;}
+  .nav-links{display:flex;align-items:center;gap:32px;}
+  .nav-links a{color:var(--text-soft);font-size:14.5px;font-weight:500;transition:color .15s ease;}
+  .nav-links a:hover{color:var(--text);}
+  .nav-cta{display:flex;align-items:center;gap:12px;}
+  .nav-toggle{display:none;background:none;border:none;color:var(--text);font-size:22px;cursor:pointer;}
+
+  @media (max-width:820px){
+    .nav-links{position:absolute;top:100%;left:0;right:0;background:#fff;border-bottom:1px solid var(--border);
+      flex-direction:column;align-items:flex-start;padding:20px 24px;gap:18px;display:none;}
+    .nav-links.open{display:flex;}
+    .nav-toggle{display:block;}
+    .nav-cta .btn-ghost{display:none;}
+  }
+
+  /* Hero */
+  .hero{padding:130px 24px 100px;text-align:center;}
+  .hero-inner{max-width:800px;margin:0 auto;}
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:8px;padding:7px 16px;border-radius:980px;
+    background:#f5f5f7;border:1px solid var(--border);
+    font-size:13px;font-weight:500;color:var(--text-soft);margin-bottom:28px;
+  }
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px rgba(34,197,94,.6);}
+  h1{font-size:clamp(34px,6vw,68px);font-weight:700;line-height:1.08;letter-spacing:-1.6px;margin-bottom:26px;}
+  h1 .grad{background:var(--gradient);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .hero p.sub{font-size:19px;color:var(--text-dim);max-width:620px;margin:0 auto 40px;}
+  .hero-ctas{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+  /* Primary button on its own row; "Talk to Us" and "Chat on WhatsApp" side by side below it */
+  .hero-ctas .cta-break{flex-basis:100%;height:0;}
+  .hero-note{margin-top:18px;font-size:14.5px;color:var(--text-dim);font-weight:500;}
+  /* Phones: full-width stacked buttons so long labels never clip or crowd each other */
+  @media (max-width:520px){
+    .hero-ctas{flex-direction:column;align-items:stretch;}
+    .hero-ctas .cta-break{display:none;}
+    .hero-ctas .btn{width:100%;white-space:normal;text-align:center;}
+  }
+  /* Hero two-column layout: text left, animated chat demo right; stacks below 900px */
+  .hero-grid{max-width:1160px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:48px;align-items:center;}
+  .hero-visual{min-width:0;}
+  @media (max-width:899.98px){.hero-grid{grid-template-columns:minmax(0,1fr);gap:56px;}}
+
+  /* Sections */
+  section{padding:96px 24px;}
+  .section-head{max-width:640px;margin:0 auto 52px;text-align:center;}
+  .section-head .kicker{color:var(--accent-text);font-weight:700;font-size:12.5px;letter-spacing:1.4px;text-transform:uppercase;margin-bottom:12px;}
+  .section-head h2{font-size:clamp(26px,3.6vw,36px);font-weight:700;letter-spacing:-.6px;margin-bottom:14px;}
+  .section-head p{color:var(--text-dim);font-size:16px;}
+
+  /* Features */
+  .features-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;max-width:860px;margin:0 auto;}
+  @media (max-width:600px){.features-grid{grid-template-columns:1fr;}}
+  .closing-line{max-width:700px;margin:-40px auto 0;padding:0 24px 60px;text-align:center;color:var(--text-dim);font-size:15px;font-style:italic;}
+  .feature-card{
+    background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+    padding:30px 26px;transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease;
+  }
+  .feature-card:hover{transform:translateY(-4px);border-color:var(--border-strong);box-shadow:0 16px 32px -18px rgba(0,0,0,.16);}
+  .feature-icon{
+    width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+    background:var(--gradient);margin-bottom:18px;
+  }
+  .feature-icon svg{width:22px;height:22px;stroke:#fff;}
+  .feature-card h3{font-size:17px;font-weight:600;margin-bottom:8px;}
+  .feature-card p{color:var(--text-dim);font-size:14.5px;}
+
+  /* Demo */
+  .demo-section{background:var(--bg-alt);border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
+  .demo-panel{
+    max-width:640px;margin:0 auto;text-align:center;background:var(--card);border:1px solid var(--border);
+    border-radius:20px;padding:48px 32px;position:relative;box-shadow:0 20px 48px -28px rgba(0,0,0,.12);
+  }
+  .demo-panel .pulse{
+    width:64px;height:64px;border-radius:50%;background:var(--gradient);margin:0 auto 20px;
+    display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 0 rgba(139,92,246,.4);
+    animation:pulse 2.4s infinite;
+  }
+  .demo-panel .pulse svg{width:28px;height:28px;stroke:#fff;}
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(139,92,246,.35);}
+    70%{box-shadow:0 0 0 18px rgba(139,92,246,0);}
+    100%{box-shadow:0 0 0 0 rgba(139,92,246,0);}
+  }
+  .demo-panel h3{font-size:22px;font-weight:700;margin-bottom:10px;}
+  .demo-panel p{color:var(--text-dim);font-size:15px;margin-bottom:24px;}
+  .demo-panel p.try-label{margin-bottom:12px;font-weight:600;color:var(--text);}
+  .try-examples{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;}
+  .try-example{
+    font:inherit;font-size:14.5px;font-weight:600;color:var(--accent-text);background:#fff;cursor:pointer;
+    border:1px solid var(--border-strong);border-radius:980px;padding:10px 18px;
+    transition:transform .15s ease,background .15s ease,border-color .15s ease;
+  }
+  .try-example:hover,.try-example:focus-visible{background:#f5f5f7;border-color:var(--accent-text);transform:translateY(-1px);outline:none;}
+
+  /* Contact */
+  .contact-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;max-width:1160px;margin:0 auto;}
+  @media (max-width:1000px){.contact-grid{grid-template-columns:repeat(2,1fr);max-width:640px;}}
+  @media (max-width:560px){.contact-grid{grid-template-columns:1fr;}}
+  .contact-card .icon svg.wa-icon{stroke:none;color:#25d366;width:21px;height:21px;}
+  .contact-card{
+    background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+    padding:26px;display:flex;flex-direction:column;gap:10px;align-items:flex-start;
+  }
+  .contact-card .icon{
+    width:40px;height:40px;border-radius:10px;background:rgba(124,92,255,.08);border:1px solid rgba(124,92,255,.25);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .contact-card .icon svg{width:19px;height:19px;stroke:var(--accent-text);}
+  .contact-card .label{font-size:12.5px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);font-weight:700;}
+  .contact-card .value{font-size:15.5px;font-weight:600;}
+  .contact-card a.value:hover{color:var(--accent-text);}
+
+  /* Footer */
+  footer{border-top:1px solid var(--border);padding:36px 24px;}
+  .footer-inner{max-width:1160px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;}
+  .footer-brand{display:flex;align-items:center;gap:10px;color:var(--text-dim);font-size:14px;}
+  .footer-brand img{height:24px;width:auto;}
+  .footer-links{display:flex;flex-wrap:wrap;gap:10px 22px;font-size:13.5px;color:var(--text-dim);}
+  .footer-links a:hover{color:var(--text);}
+
+  /* Keep the footer links clear of the floating chat button (must come after the footer rules) */
+  footer{padding-bottom:96px !important;}
+
+  /* Legal pages */
+  .legal{padding:56px 24px 40px;}
+  .legal-card{max-width:820px;margin:0 auto;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+    padding:48px 56px;box-shadow:0 20px 48px -28px rgba(0,0,0,.12);}
+  @media (max-width:640px){.legal{padding:28px 16px 24px;}.legal-card{padding:28px 20px;border-radius:14px;}}
+  .legal h1{font-size:clamp(28px,5vw,40px);font-weight:700;letter-spacing:-.8px;line-height:1.15;margin-bottom:8px;}
+  .legal .effective{color:var(--text-dim);font-size:14px;margin-bottom:22px;}
+  .legal .intro{padding-bottom:26px;margin-bottom:8px;border-bottom:1px solid var(--border);}
+  .legal section{margin-top:30px;padding:0;} /* the landing page pads every <section> by 96px */
+  .legal h2{font-size:19px;font-weight:700;letter-spacing:-.2px;margin-bottom:12px;}
+  .legal p,.legal li{font-size:15.5px;line-height:1.7;color:var(--text-soft);}
+  .legal p+p,.legal p+ul,.legal ul+p{margin-top:12px;}
+  .legal ul{list-style:none;display:flex;flex-direction:column;gap:10px;}
+  .legal li{position:relative;padding-left:20px;}
+  .legal li::before{content:"";position:absolute;left:2px;top:.72em;width:7px;height:7px;border-radius:50%;background:var(--blue);}
+  .legal strong{color:var(--text);font-weight:600;}
+  .legal a{color:var(--blue);text-decoration:underline;text-underline-offset:2px;word-break:break-word;}
+  .legal-switch{max-width:820px;margin:22px auto 0;display:flex;justify-content:center;gap:22px;font-size:14.5px;}
+  .legal-switch a{color:var(--text-dim);}
+  .legal-switch a[aria-current="page"]{color:var(--accent-text);font-weight:600;}
+</style>
+</head>
+<body>
+
+<header>
+  <nav class="nav wrap">
+    <a href="/" class="brand">
+      <img src="/assets/Spirit-monkey-logo-horizontal.png" alt="Spirit Monkey Information Technology" />
+    </a>
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">&#9776;</button>
+    <div class="nav-links" id="navLinks">
+      <a href="/#features">Features</a>
+      <a href="/#demo">Demo</a>
+      <a href="/#contact">Contact</a>
+    </div>
+    <div class="nav-cta">
+      <a href="/#contact" class="btn btn-ghost">Contact Us</a>
+      <a href="https://app.spirit-monkey.com" class="btn btn-primary">Get Started</a>
+    </div>
+  </nav>
+</header>
+
+<main class="legal">
+  <article class="legal-card">
+<h1>Privacy Policy</h1>
+<p class="effective">Effective date: 11/11/2026</p>
+<p class="intro">This Privacy Policy explains how Spirit Monkey Information Technology Pvt. Ltd. ("Spirit Monkey", "we", "us") collects, uses and protects personal information when you visit spirit-monkey.com, use our dashboard at app.spirit-monkey.com, or chat with an AI assistant that we provide on a business's website or other channel.</p>
+<section>
+<h2>1. Who we are</h2>
+<p>Spirit Monkey builds AI chatbots, websites and related software for businesses. Registered office: Sanepa, Kathmandu, Nepal. Contact: <a href="mailto:spirit.monkeytech@gmail.com">spirit.monkeytech@gmail.com</a>, +977 9841135432.</p>
+</section>
+<section>
+<h2>2. Two roles we play</h2>
+<ul>
+<li><strong>For our own website and clients:</strong> we decide how your information is used. This covers visitors to spirit-monkey.com, people who contact us, and businesses that buy our services ("clients").</li>
+<li><strong>For our clients' chatbots:</strong> when you chat with a chatbot we run for a business, we process your messages on that business's behalf and under its instructions. That business decides what it does with the leads and conversations it receives. Please also read that business's own privacy policy.</li>
+</ul>
+</section>
+<section>
+<h2>3. What we collect</h2>
+<ul>
+<li><strong>Chat messages:</strong> what you type to a chatbot, and the replies it gives.</li>
+<li><strong>Contact details you choose to share in a chat:</strong> for example your name, phone number, email address, business name, and what you are interested in.</li>
+<li><strong>Technical information:</strong> the page you chatted from, approximate time, browser type, and a conversation identifier stored in your browser for up to 24 hours so the chat can continue if you reload the page.</li>
+<li><strong>Client account information:</strong> names, email addresses, phone numbers, business details, billing records and login details of client staff.</li>
+<li><strong>Client documents:</strong> brochures, price lists, FAQs and other material our clients give us to train their chatbots.</li>
+<li><strong>Messages to us:</strong> anything you send us by phone, WhatsApp, Viber, email or our contact forms.</li>
+</ul>
+<p>We do not ask for passwords, card numbers or bank details in a chat, and you should not share them.</p>
+</section>
+<section>
+<h2>4. How we use it</h2>
+<ul>
+<li>To answer your questions through the chatbot.</li>
+<li>To pass your contact details and conversation to the business you were chatting with, so it can follow up (for example by email or WhatsApp).</li>
+<li>To produce reports for that business, such as monthly summaries of the questions visitors asked.</li>
+<li>To provide, maintain, secure and improve our services, and to prevent abuse and spam.</li>
+<li>To communicate with clients about their account, billing and support.</li>
+<li>To meet legal and accounting obligations, including issuing VAT/PAN bills.</li>
+</ul>
+<p>We do not sell personal information, and we do not use one client's documents or conversations to answer another client's visitors.</p>
+</section>
+<section>
+<h2>5. AI processing</h2>
+<p>Our chatbots use leading third-party AI models to understand questions and write answers. Your messages, and relevant parts of the business's documents, are sent to the AI provider to generate each reply. We use AI providers under terms that do not allow them to use this data to train their models, unless the chatbot is on our free trial: during a trial, the AI provider's terms may allow it to use messages and replies to improve its models. Chatbot answers are generated automatically and may occasionally be inaccurate. Please confirm important details directly with the business.</p>
+</section>
+<section>
+<h2>6. Where and how we store it</h2>
+<p>Data is stored on secure cloud servers, which may be located outside Nepal. We protect it with encrypted connections (HTTPS), access controls, encrypted storage of secret keys, and limited staff access. No system is completely secure, but we work to protect your information and will notify affected clients without undue delay if we become aware of a breach affecting their data.</p>
+</section>
+<section>
+<h2>7. Who we share it with</h2>
+<ul>
+<li>The business you chatted with, which receives your conversation and any contact details you shared.</li>
+<li>Service providers who help us run our services: cloud hosting, AI model providers, and email delivery. They may only use the data to provide their service to us.</li>
+<li>Authorities, when required by the law of Nepal or a valid legal order.</li>
+<li>A buyer or successor, if our business is merged or sold, under the same protections.</li>
+</ul>
+</section>
+<section>
+<h2>8. How long we keep it</h2>
+<ul>
+<li>Chat conversations and leads are kept for as long as the business's service with us is active, unless the business asks us to delete them sooner.</li>
+<li>When a client cancels, we keep their documents and data for 1 year in case they return, then delete them permanently.</li>
+<li>Billing records are kept for as long as Nepal's tax and accounting rules require.</li>
+</ul>
+</section>
+<section>
+<h2>9. Your choices and rights</h2>
+<p>You may ask us to show you, correct or delete personal information we hold about you, or withdraw your consent to further use. If your information came from a chat with one of our clients' chatbots, we may pass your request to that business, which is responsible for its own records. We will respond within 30 days.</p>
+</section>
+<section>
+<h2>10. Data deletion</h2>
+<p>To delete your data, email <a href="mailto:spirit.monkeytech@gmail.com">spirit.monkeytech@gmail.com</a> with the subject "Data deletion request", and include the website or page where you chatted, the approximate date, and the phone number or email you shared. We will delete the matching conversations and lead records, confirm by reply, and tell the relevant business. If you contacted us through Facebook, Instagram or TikTok, you can send the same request there.</p>
+</section>
+<section>
+<h2>11. Children</h2>
+<p>Our services are meant for businesses and adults. We do not knowingly collect information from children under 16. If you believe a child has shared information with a chatbot, contact us and we will delete it.</p>
+</section>
+<section>
+<h2>12. Cookies and browser storage</h2>
+<p>Our websites and chat widget use your browser's local storage to keep your conversation open for up to 24 hours. We do not use advertising cookies.</p>
+</section>
+<section>
+<h2>13. Changes</h2>
+<p>We may update this policy. The effective date at the top shows the latest version. If changes are significant, we will notify clients by email.</p>
+</section>
+<section>
+<h2>14. Contact</h2>
+<p>Spirit Monkey Information Technology Pvt. Ltd., Sanepa, Kathmandu, Nepal. Email: <a href="mailto:spirit.monkeytech@gmail.com">spirit.monkeytech@gmail.com</a>. Phone, WhatsApp and Viber: +977 9841135432 (6 AM to 10 PM Nepal time).</p>
+</section>
+  </article>
+  <nav class="legal-switch" aria-label="Legal">
+    <a href="/privacy-policy/" aria-current="page">Privacy Policy</a>
+    <a href="/terms/">Terms of Service</a>
+  </nav>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <img src="/assets/Spirit-monkey-logo-only.png" alt="" />
+      <span>© <span id="year">2026</span> Spirit Monkey Information Technology</span>
+    </div>
+    <div class="footer-links">
+      <a href="/#features">Features</a>
+      <a href="/#demo">Demo</a>
+      <a href="/#contact">Contact</a>
+      <a href="/privacy-policy/">Privacy Policy</a>
+      <a href="/terms/">Terms</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  document.getElementById("year").textContent = new Date().getFullYear();
+  document.getElementById("navToggle").addEventListener("click", function () {
+    document.getElementById("navLinks").classList.toggle("open");
+  });
+</script>
+</body>
+</html>
