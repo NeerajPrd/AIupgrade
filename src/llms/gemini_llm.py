@@ -56,4 +56,5 @@ class GeminiLLM(BaseLLM):
             tools=tools,
             tool_choice=tool_choice,
             response_format=response_format,
+            thinking_budget=getattr(self.config, "thinking_budget", None),
         )

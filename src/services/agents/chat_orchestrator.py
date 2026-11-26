@@ -149,6 +149,9 @@ class ChatOrchestrator:
         file_data: Optional[str] = None,
         file_name: Optional[str] = None,
         knowledge_base_only: bool = False,
+        max_history_messages: Optional[int] = None,
+        max_output_tokens: Optional[int] = None,
+        thinking_budget: Optional[int] = None,
     ) -> AsyncGenerator[str, None]:
         # 1. Get Agent
         agent = await self.agent_manager.get_agent(agent_id)
@@ -158,6 +161,13 @@ class ChatOrchestrator:
 
         # 2. Build Text Generation Service
         llm_service, model_name = await self._build_llm_service_for_agent(agent_id, agent, user_id)
+        # Website chats: cap the reply length (and so its cost). Thinking counts toward the cap on
+        # Gemini 2.5, so part of it is reserved for thinking and the rest is left for the answer.
+        if max_output_tokens:
+            current = llm_service.config.max_tokens
+            llm_service.config.max_tokens = min(current, max_output_tokens) if current else max_output_tokens
+            if thinking_budget is not None and thinking_budget >= 0:
+                llm_service.config.thinking_budget = min(thinking_budget, llm_service.config.max_tokens // 2)
         collection_name = f"agent_{agent_id}"
         
         # 2.5 Process File Injection (Direct Injection)
@@ -238,6 +248,11 @@ class ChatOrchestrator:
         # 4. Save User Message
         await self.chat_service.add_message(history_id, "user", processed_message)
         db_history = await self.chat_service.get_history(history_id)
+        # Website chats send only the most recent messages to the model (cost and abuse control).
+        if max_history_messages and len(db_history) > max_history_messages:
+            db_history = db_history[-max_history_messages:]
+            while len(db_history) > 1 and db_history[0].get("role") != "user":
+                db_history = db_history[1:]  # start the conversation with a visitor message
 
         base_instructions = agent.instructions if hasattr(agent, "instructions") else agent.get("instructions", "You are a helpful assistant.")
         full_response = ""

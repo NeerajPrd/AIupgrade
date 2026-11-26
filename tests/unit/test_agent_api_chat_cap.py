@@ -74,7 +74,7 @@ def setup(monkeypatch):
         total_calls=0,
         last_called_at=None,
     )
-    state = SimpleNamespace(used=0, count_calls=[], owned_ids=set())
+    state = SimpleNamespace(used=0, count_calls=[], owned_ids=set(), user_messages=0)
 
     async def fake_count(db, agent_id, since):
         state.count_calls.append(since)
@@ -85,6 +85,11 @@ def setup(monkeypatch):
 
     monkeypatch.setattr(agent_api_module, "count_new_conversations", fake_count)
     monkeypatch.setattr(agent_api_module, "conversation_belongs_to_agent", fake_belongs)
+
+    async def fake_user_messages(db, conversation_id):
+        return state.user_messages
+
+    monkeypatch.setattr(agent_api_module, "count_user_messages", fake_user_messages)
 
     app = FastAPI()
     app.include_router(agent_api_module.router, prefix="/api/v1")

@@ -166,6 +166,10 @@
   var CONFIG_ERROR_MESSAGE = "This chat widget isn't configured correctly. Please contact the site owner.";
   var CAP_REACHED_MESSAGE = "Our assistant is unavailable right now, please contact us directly.";
   var CONVERSATION_EXPIRED_MESSAGE = "This conversation has expired. Please send your message again to start a new one.";
+  // Matches the server's MAX_USER_MESSAGE_CHARS default; the server's limit is the one enforced.
+  var MESSAGE_MAX_LENGTH = 1000;
+  var MESSAGE_TOO_LONG_MESSAGE = "Your message is too long. Please keep it under 1,000 characters.";
+  var DAILY_LIMIT_MESSAGE = "You've reached today's message limit for this chat. Please contact us directly or try again tomorrow.";
 
   // Conversation id survives page reloads for 24h from when the conversation started.
   // Every storage access is guarded: localStorage can be missing or throw (private
@@ -216,6 +220,28 @@
   }
 
   var conversationId = ENDPOINT ? loadConversationId() : null;
+
+  // A random id for this browser, sent with each message. With the IP address it lets the server
+  // apply per-visitor spam limits. It identifies nothing about the person.
+  var SESSION_STORAGE_KEY = "spirit-monkey-widget:session";
+  function newSessionId() {
+    try {
+      if (window.crypto && window.crypto.randomUUID) return window.crypto.randomUUID().replace(/-/g, "");
+    } catch (e) {}
+    return (Date.now().toString(36) + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)).slice(0, 32);
+  }
+  var visitorSessionId = (function () {
+    try {
+      var storage = getStorage();
+      var saved = storage && storage.getItem(SESSION_STORAGE_KEY);
+      if (saved && /^[A-Za-z0-9_-]{8,64}$/.test(saved)) return saved;
+      var created = newSessionId();
+      if (storage) storage.setItem(SESSION_STORAGE_KEY, created);
+      return created;
+    } catch (e) {
+      return newSessionId();
+    }
+  })();
   var inFlight = false;
 
   var host = document.createElement("div");
@@ -341,6 +367,7 @@
   input.className = "fw-input";
   input.setAttribute("rows", "1");
   input.setAttribute("placeholder", "Type a message…");
+  input.setAttribute("maxlength", String(MESSAGE_MAX_LENGTH));
   var sendBtn = document.createElement("button");
   sendBtn.className = "fw-send";
   sendBtn.type = "button";
@@ -652,6 +679,8 @@
   function friendlyErrorFor(response, code) {
     if (code === "chat_cap_reached" || response.status === 402) return CAP_REACHED_MESSAGE;
     if (code === "conversation_not_found") return CONVERSATION_EXPIRED_MESSAGE;
+    if (code === "message_too_long") return MESSAGE_TOO_LONG_MESSAGE;
+    if (code === "visitor_daily_limit") return DAILY_LIMIT_MESSAGE;
     if (ERROR_MESSAGES[response.status]) {
       var msg = ERROR_MESSAGES[response.status];
       if (response.status === 429) {
@@ -684,7 +713,7 @@
         }, REQUEST_TIMEOUT_MS)
       : null;
 
-    var body = { message: text };
+    var body = { message: text, session_id: visitorSessionId };
     if (conversationId) body.conversation_id = conversationId;
 
     fetch(ENDPOINT, {

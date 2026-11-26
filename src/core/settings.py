@@ -213,6 +213,30 @@ class Settings(BaseSettings):
     LIGHT_LLM_MODEL: str = "gemini-flash-lite-latest"
     LIGHT_LLM_PROVIDER: str = ""
 
+    # ---- Website chat (agent-as-API) spending limits and anti-spam (src/services/spend) ----
+    # Prices in USD per 1 million tokens, used to estimate what each agent costs. Thinking tokens
+    # are billed as output. Update them in .env when Google changes its prices.
+    GEMINI_PRICE_INPUT_PER_1M: float = 0.30
+    GEMINI_PRICE_OUTPUT_PER_1M: float = 2.50
+    GEMINI_PRICE_EMBED_PER_1M: float = 0.15
+    # Monthly budget for an agent that has no budget of its own (UTC calendar month).
+    DEFAULT_AGENT_MONTHLY_BUDGET_USD: float = 3.0
+    # Where the 80% / 100% budget alerts go. Empty = no alert emails.
+    SPIRIT_MONKEY_ALERT_EMAIL: str = ""
+    # Per visitor (IP address + widget session id), per agent.
+    VISITOR_MESSAGES_PER_MINUTE: int = 10
+    VISITOR_MESSAGES_PER_DAY: int = 60
+    MAX_MESSAGES_PER_CONVERSATION: int = 30
+    MAX_USER_MESSAGE_CHARS: int = 1000
+    # Output tokens per reply. On Gemini 2.5 models thinking counts toward this limit, so part of
+    # it is set aside for thinking (THINKING_BUDGET_TOKENS) and the rest is left for the answer.
+    MAX_OUTPUT_TOKENS: int = 800
+    THINKING_BUDGET_TOKENS: int = 200
+    # How many recent messages of the conversation are sent to the model with each request.
+    MAX_HISTORY_MESSAGES: int = 10
+    # Optional: send Gemini requests to another address (local testing only). Empty = Google.
+    GEMINI_BASE_URL: str = ""
+
     SMART_MODEL_PROVIDER: str = "gemini"
     SMART_MODEL_ID: str = "gemini-flash-latest"
 

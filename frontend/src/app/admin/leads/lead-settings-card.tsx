@@ -6,7 +6,8 @@ import { Save, Send } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { getLeadSettings, saveLeadSettings, sendTestLeadEmail } from "@/lib/api/admin";
+import { getAgentSpend, getLeadSettings, saveLeadSettings, sendTestLeadEmail } from "@/lib/api/admin";
+import SpendBar from "./spend-bar";
 import { showErrorToast, showSuccessToast } from "@/utils/toast";
 
 const fieldClass =
@@ -27,6 +28,8 @@ export default function LeadSettingsCard({ agentId }: { agentId: string }) {
   const [emails, setEmails] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [hideBranding, setHideBranding] = useState(false);
+  const [budget, setBudget] = useState("");
+  const [contact, setContact] = useState("");
 
   const settings = useQuery({
     queryKey: ["admin", "lead-settings", agentId],
@@ -41,7 +44,16 @@ export default function LeadSettingsCard({ agentId }: { agentId: string }) {
     setEmails(settings.data.lead_notify_emails.join(", "));
     setWhatsapp(settings.data.lead_whatsapp_number || "");
     setHideBranding(!!settings.data.hide_branding);
+    setBudget(settings.data.monthly_budget_usd === null ? "" : String(settings.data.monthly_budget_usd));
+    setContact(settings.data.contact_details || "");
   }, [settings.data]);
+
+  const spend = useQuery({
+    queryKey: ["admin", "agent-spend", agentId],
+    queryFn: () => getAgentSpend(agentId),
+    enabled: !!agentId,
+    retry: false,
+  });
 
   const save = useMutation({
     mutationFn: () =>
@@ -50,9 +62,12 @@ export default function LeadSettingsCard({ agentId }: { agentId: string }) {
         lead_notify_emails: emails.split(/[\s,;]+/).filter(Boolean),
         lead_whatsapp_number: whatsapp.trim(),
         hide_branding: hideBranding,
+        monthly_budget_usd: budget.trim() === "" ? null : Number(budget),
+        contact_details: contact.trim(),
       }),
     onSuccess: (data) => {
       queryClient.setQueryData(["admin", "lead-settings", agentId], data);
+      queryClient.invalidateQueries({ queryKey: ["admin", "agent-spend"] });
       showSuccessToast("Settings saved");
     },
     onError: (error) => showErrorToast(errorText(error, "Could not save the settings.")),
@@ -104,6 +119,27 @@ export default function LeadSettingsCard({ agentId }: { agentId: string }) {
                 onChange={(e) => setHideBranding(e.target.checked)} />
               Hide &quot;Powered by Spirit Monkey&quot; in this assistant&apos;s chat widget
             </label>
+
+            <div className="rounded-lg border border-border p-4 space-y-3">
+              <div className="text-sm font-semibold">AI spending this month (UTC)</div>
+              {spend.data ? (
+                <SpendBar spend={spend.data} />
+              ) : (
+                <p className="text-sm text-muted-foreground">{spend.isLoading ? "Loading…" : "Not available."}</p>
+              )}
+              <label className="flex flex-col gap-1 text-sm max-w-xs">
+                Monthly budget in USD (leave empty for the default, ${settings.data?.default_monthly_budget_usd ?? 3})
+                <input type="number" min="0" step="0.01" className={fieldClass} value={budget}
+                  placeholder={String(settings.data?.default_monthly_budget_usd ?? 3)}
+                  onChange={(e) => setBudget(e.target.value)} />
+              </label>
+              <label className="flex flex-col gap-1 text-sm">
+                Contact details shown to visitors when the budget is used up (optional)
+                <textarea className={`${fieldClass} h-auto min-h-[64px] py-2`} maxLength={300} value={contact}
+                  placeholder="Call 01-5xxxxxx or email info@example.com"
+                  onChange={(e) => setContact(e.target.value)} />
+              </label>
+            </div>
             <div className="flex flex-wrap gap-3">
               <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending}>
                 <Save className="mr-2 h-4 w-4" />

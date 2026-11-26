@@ -61,6 +61,10 @@ def _settings(agent) -> dict:
         "lead_notify_emails": list(agent.lead_notify_emails or []),
         "lead_whatsapp_number": agent.lead_whatsapp_number,
         "hide_branding": bool(getattr(agent, "hide_branding", False)),
+        # None = the default from DEFAULT_AGENT_MONTHLY_BUDGET_USD
+        "monthly_budget_usd": float(agent.monthly_budget_usd) if getattr(agent, "monthly_budget_usd", None) is not None else None,
+        "default_monthly_budget_usd": float(system_setting.DEFAULT_AGENT_MONTHLY_BUDGET_USD),
+        "contact_details": getattr(agent, "contact_details", None),
         "smtp_configured": system_setting.smtp_configured,
     }
 
@@ -100,6 +104,10 @@ class LeadSettingsUpdate(BaseModel):
     lead_whatsapp_number: Optional[str] = Field(default=None, max_length=32)
     # Hide "Powered by Spirit Monkey" in this assistant's widget. Only settable here (admin), never from the embed code.
     hide_branding: Optional[bool] = None
+    # Website-chat spending cap per UTC month, in USD. null = use the default from .env.
+    monthly_budget_usd: Optional[float] = Field(default=None, ge=0, le=10000)
+    # Shown to visitors when the assistant is unavailable (budget used up). null or "" clears it.
+    contact_details: Optional[str] = Field(default=None, max_length=300)
 
 
 @router.patch("/agents/{agent_id}/lead-settings", operation_id="admin_set_agent_lead_settings")
@@ -122,6 +130,10 @@ async def set_lead_settings(agent_id: str, body: LeadSettingsUpdate, db: AsyncSe
 
     if "hide_branding" in fields and body.hide_branding is not None:
         agent.hide_branding = body.hide_branding
+    if "monthly_budget_usd" in fields:
+        agent.monthly_budget_usd = None if body.monthly_budget_usd is None else round(body.monthly_budget_usd, 4)
+    if "contact_details" in fields:
+        agent.contact_details = (body.contact_details or "").strip() or None
     if "lead_whatsapp_number" in fields:
         try:
             agent.lead_whatsapp_number = normalize_whatsapp_number(body.lead_whatsapp_number)
