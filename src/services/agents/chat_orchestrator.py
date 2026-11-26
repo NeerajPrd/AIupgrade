@@ -27,6 +27,10 @@ from src.schemas.diffusion import BaseDiffusionConfig
 from src.storages.file_storage import FileStorageService
 
 
+# Moving model aliases that agents are pinned away from (see _build_llm_service_for_agent).
+PINNED_ALIASES = ("gemini-flash-latest",)
+
+
 class ChatOrchestrator:
     def __init__(
         self,
@@ -43,7 +47,7 @@ class ChatOrchestrator:
         Safely builds an LLMService instance by resolving model settings
         nested deep inside an agent's 'config' field layer.
         """
-        model = system_setting.SMART_MODEL_ID
+        model = system_setting.DEFAULT_CHAT_MODEL
         provider = None
         temperature = 0.1
         top_p = 0.1
@@ -78,11 +82,18 @@ class ChatOrchestrator:
         if provider:
             provider_lower = provider.lower()
             if provider_lower == "gemini" and model in ("gemini", None, ""):
-                model = "gemini-2.5-flash"
+                model = system_setting.DEFAULT_CHAT_MODEL
             elif provider_lower == "openai" and model in ("openai", None, ""):
                 model = "gpt-4o-mini"
             elif provider_lower == "groq" and model in ("groq", None, ""):
                 model = "llama-3.3-70b-versatile"
+
+        # "gemini-flash-latest" was the previous default and may be saved in older agents' settings.
+        # It is an alias Google can move to another model at any time; pin it like the default.
+        if model in PINNED_ALIASES:
+            logger.info(f"Agent {agent_id}: model alias '{model}' pinned to '{system_setting.DEFAULT_CHAT_MODEL}'.")
+            model = system_setting.DEFAULT_CHAT_MODEL
+            provider = None  # re-derived below from the pinned model
 
         temperature = model_settings.get("temperature", temperature)
         top_p = model_settings.get("top_p", top_p)
