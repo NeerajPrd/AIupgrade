@@ -213,6 +213,11 @@ class Settings(BaseSettings):
     LIGHT_LLM_MODEL: str = "gemini-flash-lite-latest"
     LIGHT_LLM_PROVIDER: str = ""
 
+    # Chat model for agents (website chats included) that don't name a model of their own. Pinned to
+    # an exact version, not an alias such as "gemini-flash-latest", so the GEMINI_PRICE_* settings
+    # and the Gemini 2.5 thinking allowance below match what is actually called.
+    DEFAULT_CHAT_MODEL: str = "gemini-2.5-flash"
+
     # ---- Website chat (agent-as-API) spending limits and anti-spam (src/services/spend) ----
     # Prices in USD per 1 million tokens, used to estimate what each agent costs. Thinking tokens
     # are billed as output. Update them in .env when Google changes its prices.
