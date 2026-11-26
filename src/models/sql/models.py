@@ -1,7 +1,8 @@
 import uuid
 from datetime import date, datetime, timezone
+from decimal import Decimal
 from typing import Optional, List, Dict, Any
-from sqlalchemy import Column, String, Boolean, Date, DateTime, ForeignKey, Integer, JSON, Text, LargeBinary
+from sqlalchemy import Column, String, Boolean, Date, DateTime, ForeignKey, Integer, JSON, Text, LargeBinary, Numeric
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from pgvector.sqlalchemy import Vector
@@ -81,6 +82,10 @@ class Agent(Base):
     lead_whatsapp_number: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     # Admin-only: hide the "Powered by Spirit Monkey" line in this agent's chat widget.
     hide_branding: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    # Admin-only: website-chat spending cap per UTC calendar month. NULL = DEFAULT_AGENT_MONTHLY_BUDGET_USD.
+    monthly_budget_usd: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 4), nullable=True)
+    # Shown to website visitors when the assistant is unavailable (e.g. budget used up).
+    contact_details: Mapped[Optional[str]] = mapped_column(String(300), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
@@ -242,3 +247,4 @@ from src.models.sql.vibe_coder_models import VibeCodeExecution, UserLLMConfigDB
 from src.models.sql.agent_api import AgentAPI
 from src.models.sql.lead import Lead
 from src.models.sql.monthly_report import AgentMonthlyReport
+from src.models.sql.agent_usage import AgentMonthlyUsage

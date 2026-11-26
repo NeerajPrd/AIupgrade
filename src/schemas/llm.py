@@ -11,6 +11,8 @@ class BaseLLMConfig(BaseModel):
     temperature: Optional[float] = 0.1
     top_p: Optional[float] = 0.1
     api_key: Optional[str] = None
+    # Gemini 2.5 only: tokens the model may spend thinking (counts toward max_tokens). None = model default.
+    thinking_budget: Optional[int] = None
 
 
 class LLMModelConfigCreate(BaseModel):

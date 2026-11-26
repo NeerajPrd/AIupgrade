@@ -608,6 +608,37 @@
         check("panel still 480px tall", Math.round(panel.height) === 480, panel.height);
       });
     },
+    visitor_session_id_sent_and_stable: function () {
+      try { localStorage.removeItem("spirit-monkey-widget:session"); } catch (e) {}
+      return inject({}).then(function () { open(); return send("hi"); }).then(function () { return send("again"); }).then(function () {
+        var a = requests[0].body.session_id, b = requests[1].body.session_id;
+        check("session id sent", typeof a === "string" && /^[A-Za-z0-9_-]{8,64}$/.test(a), a);
+        check("same id for the next message", a === b);
+        check("kept for the next page load", localStorage.getItem("spirit-monkey-widget:session") === a);
+        check("input limited to 1000 characters", q(".fw-input").getAttribute("maxlength") === "1000");
+      });
+    },
+    limit_errors_are_friendly: function () {
+      responses.push({ status: 413, body: { detail: { code: "message_too_long", message: "x" } } });
+      responses.push({ status: 429, body: { detail: { code: "visitor_daily_limit", message: "x" } } });
+      responses.push({ status: 429, body: { detail: { code: "visitor_rate_limited", message: "x" } } });
+      return inject({}).then(function () { open(); return send("a"); }).then(function () {
+        check("too long", lastMessage().textContent === "Your message is too long. Please keep it under 1,000 characters.", lastMessage().textContent);
+        return send("b");
+      }).then(function () {
+        check("daily limit", lastMessage().textContent.indexOf("today's message limit") !== -1, lastMessage().textContent);
+        return send("c");
+      }).then(function () {
+        check("per-minute limit keeps the usual 429 text", lastMessage().textContent.indexOf("too fast") !== -1, lastMessage().textContent);
+      });
+    },
+    budget_message_shown_like_a_reply: function () {
+      responses.push({ status: 200, body: { success: true, conversation_id: "conv-1", notice: "budget_exhausted",
+        response: "Our assistant is unavailable right now. Please contact us directly.\n\nCall 01-5555555" } });
+      return inject({}).then(function () { open(); return send("hi"); }).then(function () {
+        check("shown as the assistant's reply", lastMessage().className.indexOf("fw-msg-bot") !== -1 && lastMessage().textContent.indexOf("Call 01-5555555") !== -1);
+      });
+    },
     storage_blocked: function () {
       var blocked = false;
       try {

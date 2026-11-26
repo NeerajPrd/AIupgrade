@@ -41,6 +41,7 @@ from src.api.v1.routers.database import db_switch
 from src.api.v1.routers.admin import agent_usage as admin_agent_usage
 from src.api.v1.routers.admin import leads as admin_leads
 from src.api.v1.routers.admin import reports as admin_reports
+from src.api.v1.routers.admin import spend as admin_spend
 
 
 def setup_and_combine_all_routers() -> APIRouter:
@@ -201,5 +202,7 @@ def setup_and_combine_all_routers() -> APIRouter:
     router.include_router(admin_leads.router)
     # Admin-only monthly client report (also emailed automatically each month)
     router.include_router(admin_reports.router)
+    # Admin-only website-chat spend per agent (monthly budgets)
+    router.include_router(admin_spend.router)
 
     return router

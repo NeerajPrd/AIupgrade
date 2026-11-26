@@ -109,6 +109,16 @@ async def monthly_lead_counts(db: AsyncSession, agent_id: uuid.UUID) -> Dict[str
     return bucket_by_month(result.scalars().all())
 
 
+async def count_user_messages(db: AsyncSession, conversation_id: str) -> int:
+    """How many visitor messages a conversation already has."""
+    result = await db.execute(
+        select(func.count()).select_from(AgentChat).where(
+            AgentChat.history_id == uuid.UUID(str(conversation_id)), AgentChat.role == "user"
+        )
+    )
+    return int(result.scalar() or 0)
+
+
 async def conversation_belongs_to_agent(
     db: AsyncSession, conversation_id: str, agent_id: uuid.UUID
 ) -> bool:

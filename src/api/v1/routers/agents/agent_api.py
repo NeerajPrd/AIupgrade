@@ -10,7 +10,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Header, 
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from loguru import logger
 
 from src.core.database import get_db
@@ -21,8 +21,12 @@ from src.services.agents.conversation_usage import (
     SOURCE_AGENT_API,
     conversation_belongs_to_agent,
     count_new_conversations,
+    count_user_messages,
     is_cap_reached,
 )
+from src.core.settings import system_setting
+from src.services.spend.tracker import send_alerts_in_background
+from src.services.spend.usage import Prices, collect_usage, cost_nano_usd
 from src.services.leads.detection import has_contact_info
 from src.services.leads.service import process_lead_in_background
 
@@ -286,6 +290,59 @@ class AgentApiChatRequest(BaseModel):
     conversation_id: Optional[str] = None
     file_data: Optional[str] = None
     file_name: Optional[str] = None
+    # Random id the widget keeps per browser; with the IP address it identifies a visitor for spam limits.
+    session_id: Optional[str] = Field(default=None, max_length=64)
+
+
+BUDGET_EXHAUSTED_MESSAGE = "Our assistant is unavailable right now. Please contact us directly."
+CONVERSATION_LIMIT_MESSAGE = (
+    "Thanks for chatting with us! This conversation has reached its message limit. "
+    "Please leave your phone number or email and our team will contact you, or start a new chat later."
+)
+CONVERSATION_LIMIT_THANKS = "Thank you! Our team will contact you soon."
+
+
+def _visitor_ip(request: Request) -> str:
+    """The visitor's IP. Behind Caddy every request comes from the proxy, so use the address the
+    proxy itself appended: the right-most X-Forwarded-For entry (left ones can be forged by clients)."""
+    forwarded = request.headers.get("x-forwarded-for", "")
+    if forwarded.strip():
+        return forwarded.split(",")[-1].strip()[:64]
+    return (request.client.host if request.client else "unknown")[:64]
+
+
+def _visitor_key(request: Request, agent_id, session_id: Optional[str]) -> str:
+    session = re.sub(r"[^A-Za-z0-9_-]", "", session_id or "")[:64] or "-"
+    return f"{agent_id}:{_visitor_ip(request)}:{session}"
+
+
+def _unavailable_message(agent) -> str:
+    """The budget-exhausted message, followed by the client's contact details when set."""
+    contact = (getattr(agent, "contact_details", None) or "").strip()
+    if not contact:
+        whatsapp = getattr(agent, "lead_whatsapp_number", None)
+        contact = f"WhatsApp: {whatsapp}" if whatsapp else ""
+    return f"{BUDGET_EXHAUSTED_MESSAGE}\n\n{contact}" if contact else BUDGET_EXHAUSTED_MESSAGE
+
+
+async def _enforce_visitor_limits(request: Request, agent_id, session_id: Optional[str]) -> None:
+    """Per visitor (IP + widget session) and agent: N messages a minute and M a day, else 429."""
+    limiter = request.app.state.limiter
+    key = _visitor_key(request, agent_id, session_id)
+    if not await limiter.allow(key=f"visitor_min:{key}", limit=system_setting.VISITOR_MESSAGES_PER_MINUTE, window_s=60):
+        raise HTTPException(
+            status_code=429,
+            detail={"code": "visitor_rate_limited",
+                    "message": "You're sending messages a bit too fast. Please wait a moment and try again."},
+            headers={"Retry-After": "60"},
+        )
+    if not await limiter.allow(key=f"visitor_day:{key}", limit=system_setting.VISITOR_MESSAGES_PER_DAY, window_s=86400):
+        raise HTTPException(
+            status_code=429,
+            detail={"code": "visitor_daily_limit",
+                    "message": "You've reached today's message limit for this chat. Please contact us directly or try again tomorrow."},
+            headers={"Retry-After": "3600"},
+        )
 
 
 @router.post("/agent-api/{slug}/chat", operation_id="agent_chat_via_api")
@@ -304,6 +361,10 @@ async def chat_via_agent_api(
     Input: JSON body with 'message' (and optional 'conversation_id' to continue a thread)
     Output: Final agent response
 
+    Limits (all set in .env, see src/core/settings.py): message length, messages per visitor per
+    minute and per day, messages per conversation, reply length, history sent to the model, and
+    the agent's monthly budget. Leads are captured whatever the outcome.
+
     Example:
         curl -X POST https://your-domain/api/v1/agent-api/my-agent/chat \\
           -H "X-API-Key: agapi_xxxxx" \\
@@ -313,7 +374,17 @@ async def chat_via_agent_api(
     # 1-2. Find the API record by slug and validate the API key
     api_record = await _authenticated_api_record(db, slug, x_api_key)
 
-    # 2b. Enforce this endpoint's own per-minute rate limit
+    # 2a. Reject over-long messages before doing anything else.
+    max_chars = system_setting.MAX_USER_MESSAGE_CHARS
+    if len(body.message or "") > max_chars:
+        raise HTTPException(
+            status_code=413,
+            detail={"code": "message_too_long",
+                    "message": f"Your message is too long. Please keep it under {max_chars:,} characters."},
+        )
+
+    # 2b. Spam limits per visitor, then this endpoint's own per-minute limit.
+    await _enforce_visitor_limits(request, api_record.agent_id, body.session_id)
     allowed = await request.app.state.limiter.allow(
         key=f"agent_api:{api_record.id}",
         limit=api_record.rate_limit_per_minute,
@@ -336,6 +407,7 @@ async def chat_via_agent_api(
     #    conversations already in progress can always finish.
     chat_service = request.app.state.agent_chat_service
     conversation_id = body.conversation_id
+    previous_user_messages = 0
     if conversation_id:
         if not await conversation_belongs_to_agent(db, conversation_id, agent.id):
             raise HTTPException(
@@ -345,6 +417,7 @@ async def chat_via_agent_api(
                     "message": "Conversation not found. Start a new conversation without conversation_id.",
                 },
             )
+        previous_user_messages = await count_user_messages(db, conversation_id)
     else:
         if agent.chat_cap is not None:
             used = await count_new_conversations(db, agent.id, agent.chat_cap_starts_at)
@@ -362,33 +435,59 @@ async def chat_via_agent_api(
             source=SOURCE_AGENT_API,
         )
 
-    # 5. Run the chat synchronously (within timeout), accumulating streamed tokens
-    orchestrator = request.app.state.chat_orchestrator
     start_time = datetime.now(timezone.utc)
+    tracker = getattr(request.app.state, "spend_tracker", None)
+    notice = None
 
-    async def _collect() -> str:
-        full_response = ""
-        async for token in orchestrator.stream_chat(
-            user_id=str(agent.user_id),
-            agent_id=str(agent.id),
-            history_id=conversation_id,
-            message=body.message,
-            http_client=getattr(request.app.state, "httpx_client", None),
-            crawl_service=getattr(request.app.state, "crawl_service", None),
-            file_data=body.file_data,
-            file_name=body.file_name,
-            knowledge_base_only=True,
-        ):
-            full_response += token
-        return full_response
+    # 5a. No AI call when the conversation is too long or the monthly budget is used up: the visitor
+    #     gets a fixed reply instead, and both messages are stored so lead capture works as usual.
+    if previous_user_messages >= system_setting.MAX_MESSAGES_PER_CONVERSATION:
+        notice = "conversation_limit"
+        full_response = CONVERSATION_LIMIT_THANKS if has_contact_info(body.message) else CONVERSATION_LIMIT_MESSAGE
+    elif tracker is not None and await tracker.is_over_budget(agent):
+        notice = "budget_exhausted"
+        full_response = _unavailable_message(agent)
+        # e.g. the budget was lowered below this month's spend: make sure the 100% alert goes out
+        background_tasks.add_task(send_alerts_in_background, tracker, agent, await tracker.spent_nano(agent.id))
 
-    try:
-        full_response = await asyncio.wait_for(_collect(), timeout=api_record.timeout_seconds)
-    except asyncio.TimeoutError:
-        raise HTTPException(status_code=504, detail="Agent chat timed out")
-    except Exception as e:
-        logger.error(f"Agent API chat failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Chat failed: {str(e)}")
+    if notice:
+        await chat_service.add_message(conversation_id, "user", body.message)
+        await chat_service.add_message(conversation_id, "assistant", full_response)
+    else:
+        # 5b. Run the chat synchronously (within timeout), accumulating streamed tokens, and
+        #     record what the Gemini calls cost.
+        orchestrator = request.app.state.chat_orchestrator
+
+        async def _collect() -> str:
+            full_response = ""
+            async for token in orchestrator.stream_chat(
+                user_id=str(agent.user_id),
+                agent_id=str(agent.id),
+                history_id=conversation_id,
+                message=body.message,
+                http_client=getattr(request.app.state, "httpx_client", None),
+                crawl_service=getattr(request.app.state, "crawl_service", None),
+                file_data=body.file_data,
+                file_name=body.file_name,
+                knowledge_base_only=True,
+                max_history_messages=system_setting.MAX_HISTORY_MESSAGES,
+                max_output_tokens=system_setting.MAX_OUTPUT_TOKENS,
+                thinking_budget=system_setting.THINKING_BUDGET_TOKENS,
+            ):
+                full_response += token
+            return full_response
+
+        with collect_usage() as usage:
+            try:
+                full_response = await asyncio.wait_for(_collect(), timeout=api_record.timeout_seconds)
+            except asyncio.TimeoutError:
+                raise HTTPException(status_code=504, detail="Agent chat timed out")
+            except Exception as e:
+                logger.error(f"Agent API chat failed: {e}")
+                raise HTTPException(status_code=500, detail=f"Chat failed: {str(e)}")
+            finally:
+                if tracker is not None and usage.calls:
+                    await _record_spend(tracker, agent, usage, background_tasks)
 
     # 6. Update API usage stats
     api_record.total_calls += 1
@@ -411,8 +510,20 @@ async def chat_via_agent_api(
         "response": full_response,
         "usage": {"duration_ms": duration_ms},
     }
+    if notice:
+        result["notice"] = notice
     # The widget shows a "Chat on WhatsApp" button when the owner has a number set (digits only, as wa.me expects).
     whatsapp = _whatsapp_digits(agent)
     if whatsapp:
         result["handoff"] = {"whatsapp": whatsapp}
     return result
+
+
+async def _record_spend(tracker, agent, usage, background_tasks: BackgroundTasks) -> None:
+    """Add this request's Gemini cost to the agent's month; alerts are emailed after the response."""
+    try:
+        cost = cost_nano_usd(usage, Prices.from_settings())
+        total = await tracker.record(agent, usage, cost)
+        background_tasks.add_task(send_alerts_in_background, tracker, agent, total)
+    except Exception as err:  # never fail the visitor's reply because of bookkeeping
+        logger.error("Could not record spend for agent {}: {}", agent.id, type(err).__name__)

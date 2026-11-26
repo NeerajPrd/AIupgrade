@@ -47,8 +47,10 @@ class FakeGoogle:
                     self.send_response(200)
                     self.send_header("Content-Type", "text/event-stream")
                     self.end_headers()
-                    for piece in ("Namaste! ", "नमस्ते।"):
-                        chunk = {"candidates": [{"content": {"role": "model", "parts": [{"text": piece}]}}]}
+                    for i, piece in enumerate(("Namaste! ", "नमस्ते।")):
+                        chunk = {"candidates": [{"content": {"role": "model", "parts": [{"text": piece}]}}],
+                                 "usageMetadata": {"promptTokenCount": 40, "candidatesTokenCount": 3 + 4 * i,
+                                                   "thoughtsTokenCount": 12}}
                         self.wfile.write(f"data: {json.dumps(chunk)}\n\n".encode("utf-8"))
                         self.wfile.flush()
                     return
@@ -61,7 +63,9 @@ class FakeGoogle:
                 else:
                     part = {"text": "Plans start at NPR 7,500 for 6 months."}
                 parts = [{"text": "private reasoning", "thought": True}, part]
-                self._json(200, {"candidates": [{"content": {"role": "model", "parts": parts}, "finishReason": "STOP"}]})
+                self._json(200, {"candidates": [{"content": {"role": "model", "parts": parts}, "finishReason": "STOP"}],
+                                 "usageMetadata": {"promptTokenCount": 120, "candidatesTokenCount": 30,
+                                                   "thoughtsTokenCount": 50, "totalTokenCount": 200}})
 
             def _json(self, status, payload):
                 data = json.dumps(payload).encode("utf-8")
@@ -293,3 +297,40 @@ async def test_image_generation_sends_the_key_in_a_header_not_the_url(monkeypatc
     assert image.size == (2, 2)
     assert seen[0].headers["x-goog-api-key"] == api_key
     assert api_key not in str(seen[0].url) and "key=" not in str(seen[0].url)
+
+
+# ---------------------------------------------------------------- token usage for website-chat spend
+
+async def test_usage_is_recorded_for_chat_stream_and_embedding(google):
+    from src.services.spend.usage import collect_usage
+
+    with collect_usage() as usage:
+        await _llm(AQ_KEY).chat_completion(user_query="hi")
+        stream = await _llm(AQ_KEY).chat_completion(conversations=[{"role": "user", "content": "hi"}], is_streaming=True)
+        async for _ in stream:
+            pass
+        await _llm(AQ_KEY, model="gemini-embedding-2").get_embeddings("fee kati ho?")
+
+    kinds = [e.kind for e in usage.entries]
+    assert kinds == ["generate", "generate", "embed"]
+    plain, streamed, embedding = usage.entries
+    assert (plain.prompt_tokens, plain.output_tokens, plain.thinking_tokens) == (120, 30, 50)
+    assert (streamed.prompt_tokens, streamed.output_tokens, streamed.thinking_tokens) == (40, 7, 12)  # last chunk's totals
+    assert embedding.estimated and embedding.embed_tokens == 3  # "fee kati ho?" = 12 bytes / 4
+
+
+async def test_nothing_is_recorded_outside_a_website_chat(google):
+    from src.services.spend import usage as spend_usage
+
+    await _llm(AQ_KEY).chat_completion(user_query="hi")  # no collector active: must not fail or leak
+    assert spend_usage._current.get() is None
+
+
+async def test_thinking_budget_is_sent_to_gemini_2_5_only(google):
+    await _llm(AQ_KEY, model="gemini-2.5-flash", max_tokens=800, thinking_budget=200).chat_completion(user_query="hi")
+    await _llm(AQ_KEY, model="gemini-flash-latest", max_tokens=800, thinking_budget=200).chat_completion(user_query="hi")
+    first, second = (r.body["generationConfig"] for r in google.requests)
+    # Google's JSON API accepts both spellings of the field name; the SDK sends the snake_case one.
+    assert first["maxOutputTokens"] == 800 and list(first["thinkingConfig"].values()) == [200]
+    assert set(first["thinkingConfig"]) <= {"thinkingBudget", "thinking_budget"}
+    assert second["maxOutputTokens"] == 800 and "thinkingConfig" not in second

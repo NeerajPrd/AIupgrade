@@ -22,6 +22,7 @@ from google import genai
 from google.genai import types
 
 from src.core.settings import system_setting
+from src.services.spend import usage as spend_usage
 
 # Same ceiling the OpenAI SDK used by default (10 minutes), in milliseconds.
 REQUEST_TIMEOUT_MS = 600_000
@@ -53,6 +54,9 @@ def default_http_options(**overrides: Any) -> types.HttpOptions:
             http_status_codes=[408, 409, 429, 500, 502, 503, 504],
         ),
     }
+    base_url = (getattr(system_setting, "GEMINI_BASE_URL", "") or "").strip()
+    if base_url:  # local testing against a stand-in server; never set in production
+        options["base_url"] = base_url
     options.update(overrides)
     return types.HttpOptions(**options)
 
@@ -213,8 +217,13 @@ def build_generate_config(
     tools: Optional[List[Dict[str, Any]]] = None,
     tool_choice: Any = "auto",
     response_format: Any = None,
+    thinking_budget: Optional[int] = None,
+    model: str = "",
 ) -> types.GenerateContentConfig:
     params: Dict[str, Any] = {}
+    # Gemini 2.5 counts thinking toward max_output_tokens; a budget keeps room for the answer.
+    if thinking_budget is not None and thinking_budget >= 0 and model.startswith("gemini-2.5"):
+        params["thinking_config"] = types.ThinkingConfig(thinking_budget=int(thinking_budget))
     if system_instruction:
         params["system_instruction"] = system_instruction
     if temperature is not None:
@@ -291,12 +300,17 @@ async def _as_openai_stream(
     # `client` is held here on purpose: the SDK closes its connection when the client object is
     # garbage-collected, and callers often keep only this iterator while they read the stream.
     _keep_alive = client  # noqa: F841
-    async for response in stream:
-        text = response_text(response)
-        calls = response_tool_calls(response)
-        if text or calls:
-            finish = response.candidates[0].finish_reason if response.candidates else None
-            yield _stream_chunk(model, text, calls, finish)
+    usage = None  # each chunk carries the running totals; the last one is the full count
+    try:
+        async for response in stream:
+            usage = response.usage_metadata or usage
+            text = response_text(response)
+            calls = response_tool_calls(response)
+            if text or calls:
+                finish = response.candidates[0].finish_reason if response.candidates else None
+                yield _stream_chunk(model, text, calls, finish)
+    finally:
+        spend_usage.record_generate(model, usage)
 
 
 # ---------------------------------------------------------------- calls
@@ -313,6 +327,7 @@ async def generate(
     tools: Optional[List[Dict[str, Any]]] = None,
     tool_choice: Any = "auto",
     response_format: Any = None,
+    thinking_budget: Optional[int] = None,
 ):
     """
     stream=False: the answer text (or {"content", "tool_calls"} when tools were given).
@@ -328,12 +343,15 @@ async def generate(
         tools=tools,
         tool_choice=tool_choice,
         response_format=response_format,
+        thinking_budget=thinking_budget,
+        model=model,
     )
     if stream:
         raw = await client.aio.models.generate_content_stream(model=model, contents=contents, config=config)
         return _as_openai_stream(client, model, raw)
 
     response = await client.aio.models.generate_content(model=model, contents=contents, config=config)
+    spend_usage.record_generate(model, response.usage_metadata)
     if tools:
         return {"content": response_text(response), "tool_calls": response_tool_calls(response)}
     return response_text(response)
@@ -346,4 +364,5 @@ async def embed(client: genai.Client, text: str, model: str = DEFAULT_EMBEDDING_
         contents=text,
         config=types.EmbedContentConfig(output_dimensionality=EMBEDDING_DIMENSIONS),
     )
+    spend_usage.record_embed(model, text, response)
     return list(response.embeddings[0].values)

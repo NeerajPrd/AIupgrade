@@ -9,6 +9,7 @@ import { IAgentView } from "@/types/agent";
 import axios from "@/lib/api/axios";
 import { useQuery } from "@tanstack/react-query";
 import { useMe } from "@/lib/store/user";
+import { listAgentSpend } from "@/lib/api/admin";
 
 const AgentCardSkeleton = () => (
   <Card className="overflow-hidden animate-pulse">
@@ -47,6 +48,16 @@ export default function AgentsPage() {
   // Filter based on ownership
   const userAgents = allAgents.filter(agent => (agent as any).user_id === userId);
 
+  // Admins see each assistant's AI spending this month (only agents with a published API have it).
+  const isAdmin = ["admin", "superadmin"].includes(user?.role);
+  const { data: spendList = [] } = useQuery({
+    queryKey: ["admin", "agent-spend", "all"],
+    queryFn: listAgentSpend,
+    enabled: isAdmin,
+    retry: false,
+  });
+  const spendByAgent = new Map(spendList.map((s) => [s.agent_id, s]));
+
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="flex justify-between items-center mb-8">
@@ -81,7 +92,8 @@ export default function AgentsPage() {
           ))
         ) : userAgents.length > 0 ? (
           userAgents.map((agent) => (
-            <AgentCard key={(agent as any)._id || (agent as any).id} agent={agent} isCustom />
+            <AgentCard key={(agent as any)._id || (agent as any).id} agent={agent} isCustom
+              spend={spendByAgent.get((agent as any)._id || (agent as any).id)} />
           ))
         ) : (
           <p className="text-muted-foreground col-span-full py-8 text-center">You have not created any agents yet</p>

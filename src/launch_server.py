@@ -190,6 +190,10 @@ async def lifespan(app: FastAPI):
     )
     logger.info("Singleton ChatOrchestrator initialized.")
 
+    # Website-chat spend per agent: Redis (through the app cache) for fast checks, Postgres as the record.
+    from src.services.spend.tracker import build_tracker
+    app.state.spend_tracker = build_tracker(postgres_manager_instance_local, cache=rt.cache)
+
     # Automatically pull configured Ollama fallback model in the background
     asyncio.create_task(_auto_pull_ollama_model())
 
